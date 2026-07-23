@@ -1,0 +1,3 @@
+The samskruti workflow, as a final step, pushes a dated copy into this repo:
+  samskruti-archives/samskruti/YYYYMMDD/…  
+  smruti's workflow → samskruti-archives/smruti/YYYYMMDD/…).
