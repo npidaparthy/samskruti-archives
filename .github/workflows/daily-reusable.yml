@@ -83,7 +83,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            fonts-noto-core fonts-noto-ui-core fonts-gargi
+            fonts-noto-core fonts-noto-ui-core \
+            fonts-lohit-telu fonts-lohit-deva fonts-gargi
           sudo fc-cache -f
 
       # 5. Generate every feed's card. Scheduled runs honour the Sydney hour gate
