@@ -92,6 +92,7 @@ function renderToPng(payload, opts) {
     '--headless',
     '--disable-gpu',
     '--no-sandbox',
+    '--disable-dev-shm-usage', // CI runners have a tiny /dev/shm → Chromium crashes without this
     '--hide-scrollbars',
     '--no-first-run',
     '--no-default-browser-check',
@@ -117,8 +118,11 @@ function renderToPng(payload, opts) {
   // macOS, which spawns GoogleUpdater) never exit on their own. So we launch
   // detached, poll for the PNG to appear and stop growing, then kill the process
   // group — fast everywhere, without waiting out a timeout.
-  const child = spawn(chrome, args, { detached: true, stdio: 'ignore' });
-  child.on('error', () => { /* surfaced below via missing file */ });
+  const child = spawn(chrome, args, { detached: true, stdio: ['ignore', 'ignore', 'pipe'] });
+  let stderr = '', exited = null;
+  child.stderr.on('data', d => { stderr += d.toString(); });
+  child.on('error', e => { stderr += `\nspawn error: ${e.message}`; });
+  child.on('exit', (code, sig) => { exited = sig ? `signal ${sig}` : `code ${code}`; });
 
   const deadline = Date.now() + (opts.timeoutMs || 30000);
   const stableFor = 400; // ms the file size must hold steady
@@ -133,6 +137,8 @@ function renderToPng(payload, opts) {
     } else {
       sinceStable = 0; lastSize = size;
     }
+    // If Chrome exited before writing anything, stop waiting out the timeout.
+    if (exited && size < 0 && Date.now() - (deadline - (opts.timeoutMs || 30000)) > 1500) break;
   }
 
   // Kill the browser (and its process group), then read the result.
@@ -140,7 +146,9 @@ function renderToPng(payload, opts) {
   try { process.kill(child.pid, 'SIGKILL'); } catch (e) { /* ignore */ }
 
   if (!fs.existsSync(pngPath)) {
-    throw new Error(`chrome produced no screenshot (${chrome}) within ${(opts.timeoutMs || 30000) / 1000}s`);
+    const tail = stderr.trim().split('\n').slice(-8).join('\n') || '(no stderr)';
+    throw new Error(
+      `chrome produced no screenshot (${chrome}); exit=${exited || 'still running'}.\n--- chrome stderr ---\n${tail}`);
   }
   const buf = fs.readFileSync(pngPath);
   try { fs.rmSync(tmp, { recursive: true, force: true }); } catch (e) { /* ignore */ }
