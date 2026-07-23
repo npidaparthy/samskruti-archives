@@ -66,7 +66,12 @@ function run(sc) {
   ], { encoding: 'utf8' });
 
   if (res.status !== 0) {
-    return { name: sc.name, status: 'FAIL', note: (res.stderr || res.stdout || '').trim().split('\n').pop() };
+    const full = ((res.stdout || '') + (res.stderr || '')).trim();
+    return {
+      name: sc.name, status: 'FAIL',
+      note: full.split('\n').pop(),
+      log: full, // full generator output, printed below the table on failure
+    };
   }
   // gen.js writes into <out-root>/<feed.output>; find the today.png it produced.
   const png = findToday(outDir);
@@ -106,7 +111,14 @@ function main() {
     if (r.status === 'PASS') pass++; else if (r.status === 'SKIP') skip++; else fail++;
   }
   console.log(`\n  ${pass} passed, ${fail} failed, ${skip} skipped.`);
-  if (pass) console.log(`  PNGs: ${OUT}\n`);
+  if (pass) console.log(`  PNGs: ${OUT}`);
+
+  for (const r of results) {
+    if (r.status === 'FAIL' && r.log) {
+      console.log(`\n----- ${r.name} output -----\n${r.log}`);
+    }
+  }
+  console.log('');
   process.exit(fail ? 1 : 0);
 }
 

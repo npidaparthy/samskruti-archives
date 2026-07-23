@@ -28,6 +28,8 @@ jobs:
       - name: Setup Chrome
         id: chrome
         uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable   # stable Google Chrome honours --screenshot (Chromium snapshots may not)
 
       - name: Install Indic fonts
         run: |
@@ -36,6 +38,18 @@ jobs:
             fonts-noto-core fonts-noto-ui-core \
             fonts-lohit-telu fonts-lohit-deva fonts-gargi
           sudo fc-cache -f
+
+      - name: Chrome smoke test
+        env:
+          DAILY_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          set +e
+          echo "chrome path: $DAILY_CHROME"
+          "$DAILY_CHROME" --version
+          "$DAILY_CHROME" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage \
+            --screenshot=/tmp/smoke.png --window-size=300,200 "data:text/html,<h1>hi</h1>"
+          echo "screenshot exit=$?"
+          ls -la /tmp/smoke.png && file /tmp/smoke.png || echo "NO SCREENSHOT FILE"
 
       - name: Render fixtures
         env:
