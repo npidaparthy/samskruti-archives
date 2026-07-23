@@ -1,0 +1,50 @@
+# Self-contained CI smoke test for the daily-tool.
+#
+# Renders cards from committed fixtures (daily-tool/test/fixtures) on a GitHub
+# runner — proving the parts that only truly validate in CI: headless Chrome, the
+# Indic fonts (Telugu + Devanagari must not render as boxes), and the generator
+# end to end. No secrets, no site repo, no archive push. The rendered PNGs are
+# uploaded as an artifact so you can eyeball the text.
+name: daily-tool CI
+
+on:
+  push:
+    paths:
+      - "daily-tool/**"
+      - ".github/workflows/daily-tool-ci.yml"
+  workflow_dispatch: {}
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Setup Chrome
+        id: chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Install Indic fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            fonts-noto-core fonts-noto-ui-core fonts-gargi
+          sudo fc-cache -f
+
+      - name: Render fixtures
+        env:
+          DAILY_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: node daily-tool/test/run.js ci-subhashitam ci-stotram
+
+      - name: Upload rendered cards
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-cards
+          path: daily-tool/.local/test-out/**/today.png
+          if-no-files-found: warn

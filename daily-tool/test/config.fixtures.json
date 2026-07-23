@@ -1,0 +1,32 @@
+{
+  "site": "ci",
+  "link": "https://samskruti.info",
+  "card": {
+    "header": { "heading": "{source}", "align": "center" },
+    "footer": { "left": "సంస్కృతి · संस्कृति", "right": "samskruti.info" },
+    "theme":  { "template": "palm-leaf", "accent": "#c8a84b" }
+  },
+  "selection": { "epoch": "2026-07-23" },
+  "timezone":  { "name": "Australia/Sydney", "hour": 4 },
+  "feeds": [
+    {
+      "id": "subhashitam",
+      "source":   { "glob": "data/subhashitam/**/*.json", "filter": "has:meaning.te" },
+      "fieldMap": {
+        "verse": "shlokam.te", "meaning": "meaning.te", "commentary": "tatparyam.te",
+        "source": "granthaH.name_en", "chanda": "chandaH"
+      },
+      "sections": ["verse", "meaning", "commentary"],
+      "caption":  "{verse}\n\n{meaning}\n\n— {source}\n🌸 {link}",
+      "output": "daily/subhashitam/", "archivePath": "ci/subhashitam"
+    },
+    {
+      "id": "stotram",
+      "source":   { "adapter": "stotram", "glob": "data/stotram/**/*_meta.json", "lang": "te" },
+      "fieldMap": { "verse": "verse", "meaning": "meaning", "source": "source" },
+      "sections": ["verse", "meaning"],
+      "caption":  "{verse}\n\n{meaning}\n\n— {source}\n🌸 {link}",
+      "output": "daily/stotram/", "archivePath": "ci/stotram"
+    }
+  ]
+}

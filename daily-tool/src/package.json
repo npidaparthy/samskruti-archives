@@ -1,0 +1,12 @@
+{
+  "name": "samskruti-daily-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Daily verse-card generator: rotation selection + palm-leaf renderer + per-feed publishing, driven entirely by each site's config.json.",
+  "bin": { "daily-gen": "gen.js" },
+  "scripts": {
+    "gen": "node gen.js"
+  },
+  "engines": { "node": ">=12" },
+  "dependencies": {}
+}

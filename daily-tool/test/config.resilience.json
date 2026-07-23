@@ -1,0 +1,25 @@
+{
+  "site": "samskruti",
+  "link": "https://samskruti.info",
+  "card": {
+    "header": { "heading": "{source} · {doesnotexist}" },
+    "footer": { "left": "సంస్కృతి", "right": "samskruti.info" }
+  },
+  "selection": { "epoch": "2026-07-23" },
+  "timezone": { "name": "Australia/Sydney", "hour": 4 },
+  "feeds": [
+    {
+      "id": "resilience",
+      "source": { "glob": "data/subhashitam/**/*.json", "filter": "has:shlokam.te" },
+      "fieldMap": {
+        "verse": "shlokam.te",
+        "meaning": "meaning.te",
+        "source": "granthaH.name_en",
+        "chanda": "chandaH"
+      },
+      "sections": ["verse", "brandnewsectiontype", "wordbyword", "commentary", "meaning", "source"],
+      "caption": "{verse}\n— {source}\n{link}",
+      "output": "daily/resilience/", "archivePath": "samskruti/resilience"
+    }
+  ]
+}

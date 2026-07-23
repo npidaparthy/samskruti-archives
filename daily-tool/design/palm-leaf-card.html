@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Palm Leaf Share Card — Design Preview</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #1a1208;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.25rem;
+    padding: 2rem 1rem;
+    font-family: system-ui, sans-serif;
+  }
+  .label { font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase; color: #8a7040; text-align: center; }
+  canvas { box-shadow: 0 32px 80px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,200,80,0.1); max-width: 100%; }
+  .controls { display: flex; gap: 0.6rem; flex-wrap: wrap; justify-content: center; }
+  button {
+    background: rgba(200,148,58,0.15); border: 1px solid rgba(200,148,58,0.3);
+    color: #c8943a; padding: 0.4rem 0.9rem; font-size: 0.72rem;
+    letter-spacing: 0.06em; border-radius: 6px; cursor: pointer; transition: background 0.18s;
+  }
+  button:hover { background: rgba(200,148,58,0.28); }
+  button.active { background: rgba(200,148,58,0.38); border-color: rgba(200,148,58,0.7); }
+  .note { font-size: 0.68rem; color: #5a4020; text-align: center; max-width: 420px; line-height: 1.6; }
+  hr { border: none; border-top: 1px solid rgba(200,148,58,0.15); width: 100%; max-width: 540px; }
+</style>
+</head>
+<body>
+
+<p class="label">Palm Leaf Manuscript · Share Card Design Preview · 1080 × 1080</p>
+<canvas id="c"></canvas>
+
+<div class="controls">
+  <button id="btnTe" class="active">Telugu</button>
+  <button id="btnSa">Devanagari</button>
+  <button id="btnIast">IAST</button>
+  <button id="btnDl">⬇ Download PNG</button>
+</div>
+
+<hr>
+
+<div class="controls">
+  <button id="presetAnushtup" class="active">Anuṣṭup (8 syl) — 2 lines</button>
+  <button id="presetIndravajra">Indravajrā (11 syl) — 2 lines</button>
+  <button id="presetSragdhara">Sragdharā (21 syl) — 4 lines</button>
+</div>
+
+<p class="note">Canvas-rendered at 1080×1080. Script and verse switchers test layout for different metres. Anuṣṭup &amp; Indravajrā use 2-line format; Sragdharā uses 4-line format.</p>
+
+<script>
+const CARD_SIZE = 1080;
+const canvas = document.getElementById('c');
+canvas.width  = CARD_SIZE;
+canvas.height = CARD_SIZE;
+canvas.style.width  = '540px';
+canvas.style.height = '540px';
+
+// ── Test presets ──────────────────────────────────────────────────────────────
+
+const PRESETS = {
+  anushtup: {
+    syllables: 8,
+    source: 'చాణక్య నీతి · అనుష్టుప్ (Anuṣṭup) — 8 syllables per quarter, 4 quarters',
+    verse: {
+      te:   'మాతృవత్ పరదారేషు\nపరద్రవ్యేషు లోష్టవత్ |\nఆత్మవత్ సర్వభూతేషు\nయః పశ్యతి స పండితః ॥',
+      sa:   'मातृवत् परदारेषु\nपरद्रव्येषु लोष्टवत् |\nआत्मवत् सर्वभूतेषु\nयः पश्यति स पण्डितः ॥',
+      iast: 'mātṛvat paradāreṣu\nparadravyeṣu loṣṭavat |\nātmavat sarvabhūteṣu\nyaḥ paśyati sa paṇḍitaḥ ||',
+    },
+    meaning:   'ఇతరుల భార్యలను తల్లిగా, ఇతరుల సంపదను మట్టి ముద్దగా, సర్వప్రాణులను తన ఆత్మగా చూసేవాడే నిజమైన పండితుడు.',
+    tatparyam: 'పాండిత్యం పుస్తకాలలో కాదు, జీవన సదాచారంలో ఉంది — పరస్త్రీ పట్ల పవిత్రత, పరధనం పట్ల నిర్లిప్తత, సర్వభూతాల పట్ల సమభావం. చాణక్యుని దృష్టిలో నిజమైన పండితుడు సంస్కారవంతుడు, గ్రంథాధ్యాయి మాత్రమే కాదు.',
+  },
+  indravajra: {
+    syllables: 11,
+    source: 'దేవదేవగీత · ఇంద్రవజ్ర (Indravajrā) — 11 syllables per quarter, 4 quarters',
+    verse: {
+      te:   'త్వమేవ మాతా చ పితా త్వమేవ\nత్వమేవ బంధుశ్చ సఖా త్వమేవ |\nత్వమేవ విద్యా ద్రవిణం త్వమేవ\nత్వమేవ సర్వం మమ దేవదేవ ॥',
+      sa:   'त्वमेव माता च पिता त्वमेव\nत्वमेव बन्धुश्च सखा त्वमेव |\nत्वमेव विद्या द्रविणं त्वमेव\nत्वमेव सर्वं मम देवदेव ॥',
+      iast: 'tvameva mātā ca pitā tvameva\ntvameva bandhuśca sakhā tvameva |\ntvameva vidyā draviṇaṃ tvameva\ntvameva sarvaṃ mama devadeva ||',
+    },
+    meaning:   'దేవదేవా! నీవే నాకు అమ్మ, నీవే నాన్న; నీవే బంధువు, నీవే మిత్రుడు; నీవే విద్య, నీవే సంపద; నాకు నీవే సర్వస్వం.',
+    tatparyam: 'ఈ శ్లోకం పూర్ణ శరణాగతి యొక్క అభివ్యక్తి. మాత, పిత, బంధు, సఖ, విద్య, ద్రవిణం — జీవితంలో మనిషికి అవసరమైన ప్రతి ఆధారమూ భగవంతుని యందే ఉన్నదని భక్తుడు అనుభవిస్తాడు. ఈ అనుభవం చేరుకున్నప్పుడు బాహ్య ఆసరాల వెంట పరుగెత్తే అవసరం తొలగిపోతుంది.',
+  },
+  sragdhara: {
+    syllables: 21,
+    source: 'విష్ణు ధ్యాన శ్లోకం (సనాతన పంచాయతన పూజా) · స్రగ్ధరా (Sragdharā) — 21 syllables per quarter',
+    verse: {
+      te:   'శాంతాకారం భుజగశయనం పద్మనాభం సురేశం\nవిశ్వాధారం గగనసదృశం మేఘవర్ణం శుభాంగం |\nలక్ష్మీకాంతం కమలనయనం యోగిభిర్ధ్యానగమ్యం\nవన్దే విష్ణుం భవభయహారం సర్వలోకైకనాథం ॥',
+      sa:   'शान्ताकारं भुजगशयनं पद्मनाभं सुरेशं\nविश्वाधारं गगनसदृशं मेघवर्णं शुभाङ्गं |\nलक्ष्मीकान्तं कमलनयनं योगिभिर्ध्यानगम्यं\nवन्दे विष्णुं भवभयहरं सर्वलोकैकनाथम् ॥',
+      iast: 'śāntākāraṃ bhujagaśayanaṃ padmanābhaṃ sureśaṃ\nviśvādhāraṃ gaganasadṛśaṃ meghavarṇaṃ śubhāṅgaṃ |\nlakṣmīkāntaṃ kamalanavanaṃ yogibhirdhyānagamyaṃ\nvande viṣṇuṃ bhavabhayaharaṃ sarvalokaikanātham ||',
+    },
+    meaning:   'ప్రశాంత రూపం, సర్పశయనుడు, పద్మనాభుడు, సురేశుడు, విశ్వాధారుడు, గగన సదృశుడు, మేఘవర్ణుడు, శుభాంగుడు, లక్ష్మీకాంతుడు, కమలనయనుడు, యోగులకు ధ్యానగమ్యుడు, సంసార భయహారుడు — అట్టి విష్ణువుకు నమస్కారం.',
+    tatparyam: 'ఈ ప్రసిద్ధమైన విష్ణు ధ్యాన శ్లోకం ఆదిశేషుని మీద శయనించిన విష్ణువు యొక్క సంపూర్ణ రూపాన్ని అద్భుతమైన కవిత్వంలో వర్ణిస్తుంది. ప్రతి పదమూ భగవంతుని ఒక లక్షణాన్ని వర్ణిస్తుంది. ధ్యానగమ్యం అన్న పదం ముఖ్యం — విష్ణువు తర్కంతో కాదు, ధ్యానంతో అనుభవించేవాడు.',
+  },
+};
+
+let currentScript = 'te';
+let currentPreset = 'anushtup';
+
+// ── Canvas helpers ────────────────────────────────────────────────────────────
+
+function drawNoise(ctx, w, h, alpha) {
+  const id = ctx.createImageData(w, h);
+  const d = id.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const v = Math.random() * 255;
+    d[i] = d[i+1] = d[i+2] = v; d[i+3] = alpha;
+  }
+  ctx.putImageData(id, 0, 0);
+}
+
+function drawSectionHeading(ctx, label, x, y, color) {
+  ctx.save();
+  ctx.font = 'bold 28px "Georgia", serif';
+  ctx.fillStyle = color; ctx.textAlign = 'left';
+  const tw = ctx.measureText(label).width;
+  const lx = x - tw / 2;
+  ctx.fillText(label, lx, y);
+  const gap = 16, len = 72;
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.45;
+  ctx.beginPath(); ctx.moveTo(lx - gap - len, y - 8); ctx.lineTo(lx - gap, y - 8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(lx + tw + gap, y - 8); ctx.lineTo(lx + tw + gap + len, y - 8); ctx.stroke();
+  ctx.restore();
+}
+
+// Wrap text with NO truncation — returns bottom Y after last line
+function wrapText(ctx, text, x, y, maxW, lineH) {
+  const words = text.split(' ');
+  let line = '', cy = y;
+  for (const word of words) {
+    const test = line + word + ' ';
+    if (ctx.measureText(test).width > maxW && line) {
+      ctx.fillText(line.trim(), x, cy);
+      line = word + ' '; cy += lineH;
+    } else { line = test; }
+  }
+  if (line.trim()) ctx.fillText(line.trim(), x, cy);
+  return cy + lineH;
+}
+
+// Measure wrapped height without drawing — used for layout planning
+function measureWrapHeight(ctx, text, maxW, lineH) {
+  const words = text.split(' ');
+  let line = '', lines = 1;
+  for (const word of words) {
+    const test = line + word + ' ';
+    if (ctx.measureText(test).width > maxW && line) { line = word + ' '; lines++; }
+    else { line = test; }
+  }
+  return lines * lineH;
+}
+
+// Wrap source line to max 2 lines at a fixed size; returns endY
+function drawSource(ctx, text, x, y, maxW, size, fam) {
+  ctx.font = `500 ${size}px ${fam}`;
+  const words = text.split(' ');
+  let line = '', lines = [];
+  for (const word of words) {
+    const test = line + word + ' ';
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line.trim()); line = word + ' '; }
+    else { line = test; }
+  }
+  if (line.trim()) lines.push(line.trim());
+  // Max 2 lines
+  const rendered = lines.slice(0, 2);
+  const lh = size * 1.5;
+  rendered.forEach((l, i) => ctx.fillText(l, x, y + i * lh));
+  return y + rendered.length * lh;
+}
+
+// Verse line format:
+//   Anuṣṭup (≤8 syl) → always 2 lines (join pada pairs)
+//   Longer metres     → always 4 lines (split at | / । if stored as 2)
+function prepareVerseLines(rawText, syllables) {
+  const lines = rawText.split('\n').map(l => l.trim()).filter(Boolean);
+  if ((syllables || 8) <= 8) {
+    if (lines.length === 4) return [`${lines[0]} ${lines[1]}`, `${lines[2]} ${lines[3]}`];
+    return lines;
+  }
+  if (lines.length === 2) {
+    const four = lines.flatMap(l => {
+      const parts = l.split(/\s*[|।]\s*/);
+      return parts.length >= 2
+        ? [parts[0].trim(), parts.slice(1).join(' ').trim()]
+        : [l];
+    }).filter(Boolean);
+    if (four.length === 4) return four;
+  }
+  return lines;
+}
+
+// ── Main draw ─────────────────────────────────────────────────────────────────
+
+function draw(script, presetKey) {
+  const DATA   = PRESETS[presetKey];
+  const ctx    = canvas.getContext('2d');
+  const S      = CARD_SIZE;
+  const INK    = '#1A0A02';
+  const INK2   = '#3A2010';
+  const OUTER  = 36;
+  const INNER  = 52;
+  const CONT   = 90;
+  const textW  = S - CONT * 2;
+
+  // ── Background ──
+  const bg = ctx.createLinearGradient(0, 0, S, S);
+  bg.addColorStop(0,   '#C8943A');
+  bg.addColorStop(0.3, '#D4A040');
+  bg.addColorStop(0.6, '#C08030');
+  bg.addColorStop(1,   '#A86820');
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, S, S);
+
+  // Vein streaks (seeded loop — consistent look per draw)
+  for (let i = 0; i < 18; i++) {
+    const y = (i / 18) * S + 20;
+    const a = 0.03 + (i % 3) * 0.015;
+    ctx.strokeStyle = `rgba(${i % 2 === 0 ? '255,200,100' : '80,30,0'},${a})`;
+    ctx.lineWidth = 1 + (i % 3);
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.bezierCurveTo(S*0.3, y + (i%2===0?8:-8), S*0.7, y + (i%2===0?-6:6), S, y);
+    ctx.stroke();
+  }
+
+  // Grain
+  const off = document.createElement('canvas');
+  off.width = S; off.height = S;
+  drawNoise(off.getContext('2d'), S, S, 28);
+  ctx.drawImage(off, 0, 0);
+
+  // Vignette
+  const vig = ctx.createRadialGradient(S/2, S/2, S*0.32, S/2, S/2, S*0.72);
+  vig.addColorStop(0, 'rgba(0,0,0,0)');
+  vig.addColorStop(1, 'rgba(30,8,0,0.44)');
+  ctx.fillStyle = vig; ctx.fillRect(0, 0, S, S);
+
+  // ── Decorative frame ──
+  ctx.strokeStyle = 'rgba(80,30,5,0.55)'; ctx.lineWidth = 2;
+  ctx.strokeRect(OUTER, OUTER, S - OUTER*2, S - OUTER*2);
+  ctx.strokeStyle = 'rgba(80,30,5,0.28)'; ctx.lineWidth = 1;
+  ctx.strokeRect(INNER, INNER, S - INNER*2, S - INNER*2);
+  // Corner brackets
+  const CF = 18;
+  for (const [cx, cy] of [[OUTER,OUTER],[S-OUTER,OUTER],[OUTER,S-OUTER],[S-OUTER,S-OUTER]]) {
+    const sx = cx === OUTER ? 1 : -1, sy = cy === OUTER ? 1 : -1;
+    ctx.strokeStyle = 'rgba(80,30,5,0.55)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(cx, cy+sy*CF); ctx.lineTo(cx, cy); ctx.lineTo(cx+sx*CF, cy); ctx.stroke();
+  }
+
+  // Binding hole
+  ctx.save();
+  ctx.beginPath(); ctx.arc(S/2, OUTER+26, 16, 0, Math.PI*2);
+  ctx.fillStyle = 'rgba(20,6,0,0.55)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(100,50,10,0.5)'; ctx.lineWidth = 1.5; ctx.stroke();
+  ctx.restore();
+
+  const SRC_FAM   = '"Georgia",serif';
+  const VERSE_FAM = '"Noto Sans Telugu","Noto Serif Devanagari","Georgia",serif';
+  const BODY_FAM  = '"Noto Sans Telugu","Georgia",serif';
+  const SECT_GAP  = 44;
+  const HEAD_H    = 42;
+  const footerRule = S - INNER - 58;
+  const footerY    = S - INNER - 18;
+
+  // ── 1. Source band — source name + colour-coded metre ──
+  const rawSrc   = DATA.source || '';
+  const dotIdx   = rawSrc.lastIndexOf('·');
+  const srcName  = (dotIdx > 0 ? rawSrc.slice(0, dotIdx) : rawSrc).trim().toUpperCase();
+  const srcMetre = (dotIdx > 0 ? rawSrc.slice(dotIdx + 1) : '').trim().toUpperCase();
+
+  const SRC_SIZE   = 19;
+  const SRC_LINE_H = SRC_SIZE * 1.55;
+  const MTR_SIZE   = 20;
+  const MTR_LINE_H = MTR_SIZE * 1.4;
+
+  ctx.font = `500 ${SRC_SIZE}px ${SRC_FAM}`;
+  const srcWords = srcName.split(' ');
+  let srcLine = '', srcLines = [];
+  for (const w of srcWords) {
+    const t = srcLine + w + ' ';
+    if (ctx.measureText(t).width > textW && srcLine) { srcLines.push(srcLine.trim()); srcLine = w + ' '; }
+    else { srcLine = t; }
+  }
+  if (srcLine.trim()) srcLines.push(srcLine.trim());
+  srcLines = srcLines.slice(0, 2);
+
+  const srcRule1 = OUTER + 56;
+  const srcTextY = srcRule1 + 14 + SRC_SIZE;
+  const lastSrcY = srcTextY + (srcLines.length - 1) * SRC_LINE_H;
+  const metreY   = srcMetre ? srcTextY + srcLines.length * SRC_LINE_H + MTR_LINE_H * 0.6 : 0;
+  const srcRule2 = (srcMetre ? metreY : lastSrcY) + 18;
+
+  ctx.strokeStyle = 'rgba(80,30,5,0.28)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(INNER, srcRule1); ctx.lineTo(S-INNER, srcRule1); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(INNER, srcRule2); ctx.lineTo(S-INNER, srcRule2); ctx.stroke();
+
+  ctx.font = `500 ${SRC_SIZE}px ${SRC_FAM}`;
+  ctx.fillStyle = INK2; ctx.textAlign = 'center';
+  srcLines.forEach((l, i) => ctx.fillText(l, S/2, srcTextY + i * SRC_LINE_H));
+
+  if (srcMetre) {
+    ctx.font = `700 ${MTR_SIZE}px ${SRC_FAM}`;
+    ctx.fillStyle = '#8B4500';
+    ctx.fillText(`◆  ${srcMetre}  ◆`, S/2, metreY);
+  }
+
+  // ── 2. Verse — auto-shrink to fit width, font scales with syllable count ──
+  const rawVerse   = DATA.verse[script] || DATA.verse.te;
+  const verseLines = prepareVerseLines(rawVerse, DATA.syllables);
+  const isFourLine = verseLines.length >= 4;
+  const syl        = DATA.syllables || 8;
+  const isIAST     = script === 'iast';
+  const VFS_START  = isFourLine
+    ? (syl <= 11 ? (isIAST ? 36 : 40) : syl <= 15 ? (isIAST ? 32 : 36) : (isIAST ? 28 : 32))
+    : (syl <= 8  ? (isIAST ? 38 : 42) : (isIAST ? 34 : 38));
+  const VLH_MULT   = isFourLine ? 1.65 : 1.9;
+
+  let VFS = VFS_START;
+  while (VFS > 20) {
+    ctx.font = `500 ${VFS}px ${VERSE_FAM}`;
+    if (Math.max(...verseLines.map(l => ctx.measureText(l).width)) <= textW) break;
+    VFS--;
+  }
+
+  const verseStartY = srcRule2 + 28 + VFS;
+  ctx.font = `500 ${VFS}px ${VERSE_FAM}`;
+  ctx.fillStyle = INK; ctx.textAlign = 'center';
+  let vy = verseStartY;
+  for (const line of verseLines) { ctx.fillText(line, S/2, vy); vy += VFS * VLH_MULT; }
+  const verseEndY = vy - VFS * (VLH_MULT - 0.3);
+
+  // ── 3. Find font sizes so meaning + commentary fit without truncation ──
+  // Available height between verse end and footer rule
+  const available = footerRule - 20 - verseEndY - SECT_GAP - HEAD_H - SECT_GAP - HEAD_H;
+
+  let mSize = 38, tSize = 32;
+  while (mSize >= 16) {
+    ctx.font = `500 ${mSize}px ${BODY_FAM}`;
+    const mH = measureWrapHeight(ctx, DATA.meaning,   textW, mSize * 1.6);
+    ctx.font = `500 ${tSize}px ${BODY_FAM}`;
+    const tH = measureWrapHeight(ctx, DATA.tatparyam, textW, tSize * 1.6);
+    if (mH + tH <= available) break;
+    mSize--; tSize = Math.max(14, mSize - 4);
+  }
+
+  // ── 4. Draw meaning ──
+  const meaningHeadY = verseEndY + SECT_GAP;
+  const meaningTextY = meaningHeadY + HEAD_H;
+  drawSectionHeading(ctx, 'అర్థం  ·  MEANING', S/2, meaningHeadY, '#6B1A00');
+  ctx.font = `500 ${mSize}px ${BODY_FAM}`;
+  ctx.fillStyle = INK; ctx.textAlign = 'center';
+  const meaningEndY = wrapText(ctx, DATA.meaning, S/2, meaningTextY, textW, mSize * 1.6);
+
+  // ── 5. Draw commentary ──
+  const tatpHeadY = meaningEndY + SECT_GAP - 8;
+  const tatpTextY = tatpHeadY + HEAD_H;
+  drawSectionHeading(ctx, 'తాత్పర్యం  ·  COMMENTARY', S/2, tatpHeadY, '#1A3A20');
+  ctx.font = `500 ${tSize}px ${BODY_FAM}`;
+  ctx.fillStyle = INK2; ctx.textAlign = 'center';
+  wrapText(ctx, DATA.tatparyam, S/2, tatpTextY, textW, tSize * 1.6);
+
+  // ── 6. Footer ──
+  ctx.strokeStyle = 'rgba(80,30,5,0.28)'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(INNER, footerRule); ctx.lineTo(S-INNER, footerRule); ctx.stroke();
+  ctx.font = '600 26px "Noto Sans Telugu","Noto Serif Devanagari","Georgia",serif';
+  ctx.fillStyle = INK; ctx.textAlign = 'left';
+  ctx.fillText('సంస్కృతి · संस्कृति', CONT, footerY);
+  ctx.font = '500 24px "Georgia",serif';
+  ctx.fillStyle = INK2; ctx.textAlign = 'right';
+  ctx.fillText('https://samskruti.info', S - CONT, footerY);
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+
+function redraw() { draw(currentScript, currentPreset); }
+
+function setScript(s, btn) {
+  currentScript = s;
+  document.querySelectorAll('.controls button[id^="btn"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  redraw();
+}
+
+function setPreset(p, btn) {
+  currentPreset = p;
+  document.querySelectorAll('.controls button[id^="preset"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  redraw();
+}
+
+document.getElementById('btnTe').onclick    = e => setScript('te', e.target);
+document.getElementById('btnSa').onclick    = e => setScript('sa', e.target);
+document.getElementById('btnIast').onclick  = e => setScript('iast', e.target);
+
+document.getElementById('presetAnushtup').onclick   = e => setPreset('anushtup', e.target);
+document.getElementById('presetIndravajra').onclick = e => setPreset('indravajra', e.target);
+document.getElementById('presetSragdhara').onclick  = e => setPreset('sragdhara', e.target);
+
+document.getElementById('btnDl').onclick = () => {
+  canvas.width = CARD_SIZE; canvas.height = CARD_SIZE;
+  redraw();
+  const a = document.createElement('a');
+  a.download = `sharecard-${currentPreset}-${currentScript}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+};
+
+redraw();
+</script>
+</body>
+</html>

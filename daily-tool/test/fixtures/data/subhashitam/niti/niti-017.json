@@ -1,0 +1,40 @@
+{
+  "id": "niti-017",
+  "tags": [
+    "niti",
+    "vidya"
+  ],
+  "shlokam": {
+    "te": "పుస్తకస్థా తు యా విద్యా పరహస్తగతం ధనమ్ ।\nకార్యకాలే సముత్పన్నే న సా విద్యా న తద్ధనమ్ ॥",
+    "sa": "पुस्तकस्था तु या विद्या परहस्तगतं धनम् ।\nकार्यकाले समुत्पन्ने न सा विद्या न तद्धनम् ॥",
+    "iast": "pustakasthā tu yā vidyā parahastagataṃ dhanam ।\nkāryakāle samutpanne na sā vidyā na taddhanam ॥"
+  },
+  "chandaH": "అనుష్టుప్ (Anuṣṭup) — 8 syllables per quarter, 4 quarters",
+  "granthaH": {
+    "name_te": "చాణక్యనీతి",
+    "name_en": "Cāṇakya Nīti",
+    "chapter": "",
+    "grantha_sa": "चाणक्यनीतिः",
+    "grantha": "Cāṇakya Nīti",
+    "grantha_te": "చాణక్యనీతిః"
+  },
+  "padavibhagam": {
+    "te": "పుస్తకస్థా | తు | యా | విద్యా | పరహస్తగతమ్ | ధనమ్ | కార్యకాలే | సముత్పన్నే | న | సా | విద్యా | న | తత్ | ధనమ్",
+    "en": "pustakasthā | tu | yā | vidyā | parahastagatam | dhanam | kāryakāle | samutpanne | na | sā | vidyā | na | tat | dhanam"
+  },
+  "anvayam": {
+    "te": "యా విద్యా పుస్తకస్థా, యత్ ధనం పరహస్తగతమ్ — కార్యకాలే సముత్పన్నే సా విద్యా న, తత్ ధనం న.",
+    "en": "The knowledge that stays in books and the wealth gone into another's hands — when the moment of need arises, that is no knowledge and that is no wealth."
+  },
+  "meaning": {
+    "te": "పుస్తకంలోనే ఉండిపోయిన విద్య, ఇతరుల చేతిలోకి వెళ్ళిన ధనం — అవసరం వచ్చినప్పుడు ఆ విద్య విద్య కాదు, ఆ ధనం ధనం కాదు.",
+    "en": "Knowledge that remains only in books, and wealth passed into another's hands — when the hour of need comes, that knowledge is no knowledge and that wealth is no wealth."
+  },
+  "tatparyam": {
+    "te": "విద్య మనసులో స్థిరపడి, అవసరమైనప్పుడు వినియోగంలోకి రావాలి; కేవలం పుస్తకంలో ఉండి కంఠస్థం కానిది ఉపయోగపడదు. అలాగే ధనం తన అధీనంలో ఉంటేనే ఆపత్కాలంలో ఆదుకుంటుంది. చాణక్యుడు ఆచరణాత్మక జ్ఞానాన్నీ, స్వాధీన సంపదనూ నొక్కిచెబుతున్నాడు.",
+    "en": "Knowledge must be internalised and ready when needed; merely resting in a book, unmemorised, it is useless. Likewise wealth serves in a crisis only if under one's own control. Cāṇakya stresses practical, internalised learning and wealth one actually commands."
+  },
+  "chanda_key": "anushtubh",
+  "chanda_sa": "अनुष्टुप्",
+  "chanda_te": "అనుష్టుప్"
+}

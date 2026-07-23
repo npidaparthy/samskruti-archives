@@ -1,0 +1,60 @@
+{
+  "site": "samskruti",
+  "link": "https://samskruti.info",
+
+  "card": {
+    "header": { "heading": "{source}", "align": "center" },
+    "footer": { "left": "సంస్కృతి · संस्कृति", "right": "https://samskruti.info" },
+    "theme":  { "template": "palm-leaf", "accent": "#c8a84b" }
+  },
+
+  "selection": { "mode": "rotation", "epoch": "2026-07-23" },
+  "timezone":  { "name": "Australia/Sydney", "hour": 4 },
+
+  "feeds": [
+    {
+      "id": "subhashitam",
+      "source":   { "glob": "data/subhashitam/**/*.json", "filter": "has:meaning.te" },
+      "fieldMap": {
+        "verse": "shlokam.te", "meaning": "meaning.te", "commentary": "tatparyam.te",
+        "source": "granthaH.name_en", "chanda": "chandaH"
+      },
+      "sections": ["verse", "meaning", "commentary"],
+      "caption":  "{verse}\n\n{meaning}\n\n— {source}\n🌸 {link}",
+      "output": "daily/subhashitam/", "archivePath": "samskruti/subhashitam"
+    },
+
+    {
+      "id": "dindima",
+      "source":   { "glob": "data/v-dindhima/*.json", "filter": "has:meaning.te" },
+      "fieldMap": {
+        "verse": "shlokam.te", "meaning": "meaning.te", "commentary": "tatparyam.te",
+        "source": "granthaH.name_en", "chanda": "chandaH"
+      },
+      "sections": ["verse", "meaning", "commentary"],
+      "caption":  "{verse}\n\n{meaning}\n\n— {source}\n🌸 {link}",
+      "output": "daily/dindima/", "archivePath": "samskruti/dindima"
+    },
+
+    {
+      "id": "yogasutra",
+      "script": "sa",
+      "source":   { "glob": "data/stotram/yoga-sutras/*.json", "records": "array", "idField": "n", "filter": "has:te.s" },
+      "fieldMap": { "verse": "sa", "meaning": "te.s", "commentary": "te.d" },
+      "sections": ["verse", "meaning", "commentary"],
+      "card": { "header": { "heading": "Pātañjala Yoga Sūtra" } },
+      "caption":  "{verse}\n\n{meaning}\n\n— Pātañjala Yoga Sūtra\n🕉 {link}",
+      "output": "daily/yogasutra/", "archivePath": "samskruti/yogasutra"
+    },
+
+    {
+      "id": "stotram",
+      "source":   { "adapter": "stotram", "glob": "data/stotram/**/*_meta.json", "lang": "te" },
+      "fieldMap": { "verse": "verse", "meaning": "meaning", "source": "source" },
+      "sections": ["verse", "meaning"],
+      "card": { "header": { "heading": "{source}" } },
+      "caption":  "{verse}\n\n{meaning}\n\n— {source}\n🌸 {link}",
+      "output": "daily/stotram/", "archivePath": "samskruti/stotram"
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "site": "smruti",
+  "link": "https://gita.samskruti.info",
+
+  "card": {
+    "header": { "align": "center" },
+    "footer": { "left": "స్మృతి · स्मृति", "right": "https://gita.samskruti.info" },
+    "theme":  { "template": "palm-leaf", "accent": "#c8a84b" }
+  },
+
+  "selection": { "mode": "rotation", "epoch": "2026-07-23" },
+  "timezone":  { "name": "Australia/Sydney", "hour": 4 },
+
+  "feeds": [
+    {
+      "id": "bg",
+      "script": "te",
+      "source":   { "glob": "data/bg/content/chapters/*.json", "records": "array:shlokas", "idField": ["c", "s"] },
+      "fieldMap": {
+        "verse":      ["p1.te", "p2.te", "p3.te", "p4.te"],
+        "meaning":    "meaning.en.short",
+        "commentary": "meaning.en.long"
+      },
+      "sections": ["verse", "meaning", "commentary"],
+      "card": { "header": { "heading": "Bhagavad Gītā" } },
+      "caption":  "{verse}\n\n{meaning}\n\n— Bhagavad Gītā\n{link}",
+      "output": "daily/bg/", "archivePath": "smruti/bg"
+    },
+
+    {
+      "id": "vsn",
+      "script": "te",
+      "source":   { "glob": "data/vsn/content/vsn-shlokas.json", "records": "array:shlokas", "idField": "s" },
+      "fieldMap": { "verse": ["p1.te", "p2.te", "p3.te", "p4.te"] },
+      "sections": ["verse"],
+      "card": { "header": { "heading": "Viṣṇu Sahasranāma" } },
+      "caption":  "{verse}\n\n— Viṣṇu Sahasranāma\n{link}",
+      "output": "daily/vsn/", "archivePath": "smruti/vsn"
+    }
+  ]
+}

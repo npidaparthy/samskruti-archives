@@ -309,4 +309,49 @@ workflow no-ops. Nothing else in the site references it.
   (`design/palm-leaf-card.html` → `src/renderer.js`), self-contained so the tool has no
   runtime dependency on any site's `share-card.js`. If you redesign the live card, port the
   change here too.
+- **Rendering engine**: `gen.js` drives the system Chrome/Chromium in headless mode to
+  screenshot the card (same engine as Puppeteer, no npm dependency). It polls for the PNG
+  and kills the browser once it's stable — do **not** add `--virtual-time-budget` (it hangs).
+
+---
+
+## 14. Corpus layouts & field mapping
+
+Every corpus has a different shape; the loader (`src/lib/data.js`) absorbs that so a new
+feed is config-only. A feed's `source` describes the file layout and `fieldMap` says where
+each slot lives:
+
+| `source.records` | file layout | example corpus |
+|---|---|---|
+| *(omitted)* / `"file"` | one record per JSON file | subhāṣitam, v-dindhima |
+| `"array"` | the file is an array of records | yoga-sūtras (per-pāda files) |
+| `"array:<path>"` | records are an array at a dot-path | BG (`shlokas`), VSN (`shlokas`) |
+| `"adapter": "<name>"` | custom loader in `src/lib/adapters/` | stotram (`.txt` + `_meaning_<lang>.txt`) |
+
+`fieldMap` values are dot-paths, or an **array of paths** joined with `\n` (used to assemble
+a multi-pāda verse, e.g. `"verse": ["p1.te","p2.te","p3.te","p4.te"]`). `source.idField`
+(string or array) gives a stable id; array records are keyed `<file>#<id-or-index>`.
+Per-feed `script` (`te`|`sa`|`iast`) selects the verse script. Missing fields / unknown
+section types are skipped, so adding sections or feeds never breaks a run.
+
+**Adding a corpus with a new layout** = one small file in `src/lib/adapters/` returning
+`{ id, file, rec }[]` (see `stotram.js`), referenced by `source.adapter`. Nothing else
+changes.
+
+## 15. Testing locally
+
+`test/run.js` renders one card per scenario against the real corpora and asserts each
+produces a valid PNG — run it after touching the loader, sections, or renderer.
+
+```bash
+node test/run.js                 # all scenarios (subhashitam, dindima, yogasutra,
+                                 # stotram, bg, vsn, resilience)
+node test/run.js bg vsn          # only the named ones
+# corpus roots default to sibling repos; override if needed:
+SAMSKRUTI_DATA=/path/to/samskruti SMRUTI_DATA=/path/to/smruti node test/run.js
+```
+
+Output PNGs land in `.local/test-out/<scenario>/` for eyeballing. `.local/` is a
+git-ignored scratch area (local test data copies + outputs) — nothing in it is committed.
+`test/config.*.json` are working references for every supported layout.
 ```

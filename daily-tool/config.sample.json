@@ -1,0 +1,53 @@
+{
+  "site": "samskruti",
+  "link": "https://samskruti.info",
+
+  "card": {
+    "header": { "heading": "{source}", "align": "center" },
+    "footer": { "left": "సంస్కృతి · संस्कृति", "right": "https://samskruti.info" },
+    "theme":  { "template": "palm-leaf", "accent": "#c8a84b" }
+  },
+
+  "selection": { "mode": "rotation", "epoch": "2026-07-23" },
+  "archive":   { "repo": "yourname/samskruti-archives" },
+  "timezone":  { "name": "Australia/Sydney", "hour": 4 },
+
+  "feeds": [
+    {
+      "id": "subhashitam",
+      "source": {
+        "glob":   "data/subhashitam/**/*.json",
+        "filter": "has:meaning.te"
+      },
+      "fieldMap": {
+        "verse":      "shlokam.te",
+        "meaning":    "meaning.te",
+        "commentary": "tatparyam.te",
+        "source":     "granthaH.name_en",
+        "chanda":     "chandaH"
+      },
+      "sections": ["verse", "meaning", "commentary"],
+      "caption":  "{verse}\n\n{meaning}\n\n— {source}\n🌸 {link}",
+      "output":      "daily/subhashitam/",
+      "archivePath": "samskruti/subhashitam",
+      "telegram":    { "enabled": false, "chatIds": [], "tokenSecret": "TELEGRAM_TOKEN" }
+    },
+    {
+      "id": "dindima",
+      "source":   { "glob": "data/v-dindhima/*.json", "filter": "has:meaning.te" },
+      "fieldMap": {
+        "verse":      "shlokam.te",
+        "meaning":    "meaning.te",
+        "commentary": "tatparyam.te",
+        "source":     "granthaH.name_en",
+        "chanda":     "chandaH"
+      },
+      "sections": ["verse", "meaning", "commentary"],
+      "caption":  "{verse}\n\n{meaning}\n\n— {source}\n🌸 {link}",
+      "output":      "daily/dindima/",
+      "archivePath": "samskruti/dindima",
+      "telegram":    { "enabled": false, "chatIds": [] }
+    }
+  ]
+}
+

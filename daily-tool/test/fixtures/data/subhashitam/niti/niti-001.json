@@ -1,0 +1,41 @@
+{
+  "id": "niti-001",
+  "tags": [
+    "niti",
+    "vidya",
+    "education"
+  ],
+  "shlokam": {
+    "te": "విద్యా దదాతి వినయం వినయాద్యాతి పాత్రతామ్ ।\nపాత్రత్వాద్ధనమాప్నోతి ధనాద్ధర్మం తతః సుఖమ్ ॥",
+    "sa": "विद्या ददाति विनयं विनयाद्याति पात्रताम् ।\nपात्रत्वाद्धनमाप्नोति धनाद्धर्मं ततः सुखम् ॥",
+    "iast": "vidyā dadāti vinayaṃ vinayādyāti pātratām ।\npātratvāddhanamāpnoti dhanāddharmaṃ tataḥ sukham ॥"
+  },
+  "chandaH": "అనుష్టుప్ (Anuṣṭup) — 8 syllables per quarter, 4 quarters",
+  "granthaH": {
+    "name_te": "సుభాషితము",
+    "name_en": "Traditional subhāṣita",
+    "chapter": "",
+    "grantha": "Subhāṣita saṅgraha",
+    "grantha_te": "సుభాషితసఙ్గ్రహః",
+    "grantha_sa": "सुभाषितसङ्ग्रहः"
+  },
+  "padavibhagam": {
+    "te": "విద్యా | దదాతి | వినయమ్ | వినయాత్ | యాతి | పాత్రతామ్ | పాత్రత్వాత్ | ధనమ్ | ఆప్నోతి | ధనాత్ | ధర్మమ్ | తతః | సుఖమ్",
+    "en": "vidyā | dadāti | vinayam | vinayāt | yāti | pātratām | pātratāt | dhanam | āpnoti | dhanāt | dharmam | tataḥ | sukham"
+  },
+  "anvayam": {
+    "te": "విద్యా వినయం దదాతి; వినయాత్ పాత్రతాం యాతి; పాత్రత్వాత్ ధనం ఆప్నోతి; ధనాత్ ధర్మం (ఆచరించును); తతః సుఖం (లభ్యమగును).",
+    "en": "Vidyā (education) dadāti (gives) vinayam (humility); vinayāt (from humility) yāti (one attains) pātratām (worthiness); pātratāt (from worthiness) dhanam (wealth) āpnoti (is obtained); dhanāt (from wealth) dharmam (righteousness is practised); tataḥ (therefrom) sukham (happiness is gained)."
+  },
+  "meaning": {
+    "te": "విద్య వినయమును ఇస్తుంది; వినయమువల్ల పాత్రత (అర్హత) కలుగుతుంది; పాత్రతవల్ల ధనము లభిస్తుంది; ధనమువల్ల ధర్మాచరణ సాధ్యమవుతుంది; ధర్మంవల్ల సుఖము కలుగుతుంది.",
+    "en": "Education gives humility; from humility comes worthiness; from worthiness one obtains wealth; from wealth one practises righteousness; from righteousness comes happiness."
+  },
+  "tatparyam": {
+    "te": "విద్య కేవలం జ్ఞానమును మాత్రమే కాదు — వినయమును కూడా ప్రసాదిస్తుంది. నిజమైన విద్య అహంకారమును తగ్గించి, వ్యక్తిని సమాజానికి అర్హుని చేస్తుంది. ఈ క్రమంలో ధనము, ధర్మము మరియు చివరకు సుఖము అన్నీ సహజంగా వస్తాయి. విద్య → వినయం → పాత్రత → ధనం → ధర్మం → సుఖం అనే ఈ శృంఖల మానవ జీవితానికి ఒక సంపూర్ణ మార్గదర్శకం.",
+    "en": "True education does not merely fill the mind with knowledge — it cultivates humility. A person who is genuinely educated becomes humble, and that humility makes them worthy of trust and responsibility. From worthiness flows wealth (earned rightly), from wealth comes the capacity to practise dharma, and dharma leads to lasting happiness. This chain — vidyā → vinaya → pātratā → dhana → dharma → sukha — is a complete roadmap for a meaningful human life."
+  },
+  "chanda_key": "anushtubh",
+  "chanda_sa": "अनुष्टुप्",
+  "chanda_te": "అనుష్టుప్"
+}
