@@ -1,11 +1,14 @@
 # Daily Verse Card — tool spec
 
-Automated "verse of the day": each morning a scheduled job picks a verse, renders a
-share card (PNG) + caption, publishes them to the site's `/daily` page, and archives a
-dated copy. One generator, many sites — driven entirely by each site's `config.json`.
+Automated "verse of the day". Each morning a scheduled job, **per feed**, picks a verse,
+renders a share card (PNG) + caption, publishes them to the site's `/daily/<feed>` page,
+and archives a dated copy centrally. One generator serves many sites and many feeds —
+driven entirely by each site's `config.json`.
 
-Next iteration adds Telegram auto-posting (see §11). Until then, sharing is one tap
-from the `/daily` page (`wa.me` / Web Share).
+- **Multi-feed:** a site can run several independent daily feeds (e.g. `subhashitam`,
+  `stotram`, `yogasutra`), each with its own verse pool, card, output, and Telegram group.
+- **Sharing:** until Telegram is wired (§11), one tap from the `/daily/<feed>` page
+  (`wa.me` / Web Share). Telegram auto-post is a gated final step, no Part-1 rework.
 
 ---
 
@@ -15,22 +18,28 @@ from the `/daily` page (`wa.me` / Web Share).
 ┌──────────────────────────────────────────────────────────────┐
 │ CENTRAL: samskruti-archives (single source of truth)         │
 │                                                              │
-│  daily-tool/                 ← generator CODE (never copied  │
-│    src/gen.js                  into sites; sites CALL it)    │
-│    src/render.html                                           │
-│    src/sections/*.js         ← one draw fn per section type  │
-│    src/order/                ← per-site rotation orders      │
-│    site-assets/              ← viewing page template         │
+│  daily-tool/                                                 │
+│    README.MD                 ← this file                     │
+│    design/palm-leaf-card.html  ← reference card design       │
+│    src/                                                      │
+│      gen.js                  ← selection + render + publish  │
+│      render.html                                             │
+│      sections/*.js           ← one draw fn per section type  │
+│      renderer.js             ← vendored palm-leaf draw code  │
+│      package.json                                            │
+│    site-assets/              ← viewing-page template         │
 │      index.html  daily.css  daily.js                         │
+│    order/                    ← per-site-per-feed rotations   │
+│      samskruti.subhashitam.json                              │
+│      samskruti.yogasutra.json                                │
 │    install.sh                ← one-time per-site bootstrap    │
-│    README.md                 ← this file                     │
 │                                                              │
 │  .github/workflows/daily-reusable.yml   ← workflow_call       │
 │                                                              │
-│  samskruti/YYYYMMDD/…        ← dated archive OUTPUTS          │
-│  smruti/YYYYMMDD/…           ← dated archive OUTPUTS          │
+│  samskruti/<feed>/YYYYMMDD/…  ← dated archive OUTPUTS         │
+│  smruti/<feed>/YYYYMMDD/…     ← dated archive OUTPUTS         │
 └──────────────────────────────────────────────────────────────┘
-        ▲ called by                       ▲ pushed to
+        ▲ called by                       ▲ pushed to (ARCHIVE_TOKEN)
         │                                 │
 ┌───────┴───────────────┐        ┌────────┴──────────────┐
 │ SITE: samskruti        │        │ SITE: smruti          │
@@ -38,34 +47,36 @@ from the `/daily` page (`wa.me` / Web Share).
 │    daily.yml (caller)  │        │    daily.yml (caller) │
 │  daily/config.json     │        │  daily/config.json    │
 │  daily/index.html …    │        │  daily/index.html …   │
-│  daily/today.png/txt   │        │  daily/today.png/txt  │
+│  daily/<feed>/today.*  │        │  daily/<feed>/today.* │
 └────────────────────────┘        └───────────────────────┘
 ```
 
-- **Generator code + reusable workflow** live ONLY in central. Sites reference them.
+- **Generator code + reusable workflow** live ONLY in central. Sites **call** them
+  (they do not copy the generator).
 - **Sites** store only: a caller workflow, `config.json`, the viewing page, and the
-  generated `today.*`. Deleting `daily/` + `daily.yml` removes the feature from a site.
-- **Archive outputs** accumulate in central (`samskruti-archives/<site>/YYYYMMDD/`);
-  the site repos never accumulate — `today.*` is overwritten each day.
+  generated `daily/<feed>/today.*`. Deleting `daily/` + `daily.yml` removes the feature.
+- **Archive outputs** accumulate centrally; site repos never accumulate — each feed's
+  `today.*` is overwritten daily.
 
 ---
 
 ## 2. The daily run (flow)
 
-1. Site's caller workflow fires on cron (e.g. `0 1 * * *` ≈ 06:30 IST).
-2. It `uses:` the central reusable workflow, passing `site` + config path.
-3. Reusable workflow: checks out (a) central `daily-tool`, (b) the calling site repo;
+1. Site's caller workflow fires on cron (see §8 for the 4 AM-Sydney two-cron setup).
+2. It `uses:` the central reusable workflow, passing the config path.
+3. Reusable workflow checks out (a) central `daily-tool`, (b) the calling site repo;
    installs Node + headless Chromium + the Indic fonts.
-4. `gen.js` reads the site `config.json`, resolves the day's verse via
-   `order/<site>.json` (`dayNumber % N`), loads that verse's JSON.
-5. Puppeteer opens `render.html`, which draws only the sections in `config.sections`
-   (resolved through `config.fieldMap`) → screenshots the card → `today.png`.
-6. Writes `today.txt` (caption) + `today.log`.
-7. Commits `today.*` to the SITE repo (overwrite).
-8. Pushes a dated copy to `samskruti-archives/<site>/YYYYMMDD/` using `ARCHIVE_TOKEN`.
-9. Site's Pages deploy serves the refreshed `/daily` page.
+4. `gen.js` **loops over `config.feeds[]`**. For each feed:
+   a. resolve the day's verse via `order/<site>.<feed>.json` (`daysSince(epoch) % N`);
+   b. load that verse via the feed's `source` + `fieldMap`;
+   c. Puppeteer opens `render.html`, draws header/logo → the `sections` (resolved through
+      `fieldMap`, missing fields skipped) → footer → screenshots → `daily/<feed>/today.png`;
+   d. write `daily/<feed>/today.txt` (caption) + `today.log`;
+   e. push a dated copy to `samskruti-archives/<archivePath>/YYYYMMDD/`.
+5. Commit all `daily/*/today.*` to the SITE repo (overwrite).
+6. Site's Pages deploy serves the refreshed `/daily/<feed>` pages.
 
-GitHub cron is not exact (can drift 5–15 min, rarely skip). Fine for a daily card.
+GitHub cron is not exact (drift 5–15 min, rarely skipped). Fine for a daily card.
 
 ---
 
@@ -74,92 +85,123 @@ GitHub cron is not exact (can drift 5–15 min, rarely skip). Fine for a daily c
 ```jsonc
 {
   "site": "samskruti",
+  "link": "https://samskruti.info",
 
-  // WHERE the verses are + how to enumerate them
-  "source": {
-    "glob": "data/subhashitam/**/*.json",
-    "index": "data/subhashitam/_index.json"     // optional, for id list
+  // ── card chrome shared by all feeds (a feed may override any of these) ──
+  "card": {
+    "logo":   { "src": "daily/assets/om.png", "position": "header-left" },
+    "header": { "heading": "{source}", "align": "center" },
+    "footer": { "left": "సంస్కృతిః", "right": "samskruti.info" },  // te/sa brand · URL
+    "theme":  { "template": "palm-leaf", "accent": "#c8a84b" }
   },
 
-  // MAP this site's schema → generic card "slots"
-  "fieldMap": {
-    "verse":   "shlokam.te",
-    "source":  "granthaH.name_en",
-    "meaning": "meaning.te"
-    // samskruti has no word-by-word → simply omit it
-  },
+  "selection": { "mode": "rotation", "epoch": "2026-07-23" },
+  "archive":   { "repo": "yourname/samskruti-archives" },
+  "timezone":  { "name": "Australia/Sydney", "hour": 4 },  // gen.js gates on this (§8)
 
-  // WHICH slots to draw, in order
-  "sections": ["verse", "source", "meaning"],
-
-  // caption for share/Telegram; {slot} tokens resolved from fieldMap
-  "caption": "{verse}\n\n{meaning}\n— {source}\n{link}",
-  "link": "https://samskruti.info/#/daily",
-
-  // card look (optional; defaults if omitted)
-  "theme": { "template": "palm-leaf", "accent": "#c8a84b" },
-
-  // selection
-  "selection": { "mode": "rotation", "order": "order/samskruti.json", "epoch": "2026-08-01" },
-
-  // where dated copies go
-  "archive": { "repo": "yourname/samskruti-archives", "path": "samskruti" },
-
-  // next iteration
-  "telegram": { "enabled": false, "chatIds": [], "tokenSecret": "TELEGRAM_TOKEN" }
+  // ── one entry per independent daily feed / group ──
+  "feeds": [
+    {
+      "id": "subhashitam",
+      "source": {
+        "glob":   "data/subhashitam/**/*.json",
+        "filter": "has:meaning.te"           // only verses that have a meaning
+      },
+      "fieldMap": {
+        "verse":   "shlokam.te",
+        "meaning": "meaning.te",
+        "source":  "granthaH.name_en"
+      },
+      "sections": ["verse", "meaning", "source"],
+      "caption":  "{verse}\n\n{meaning}\n\n— {source}\n🌸 {link}",
+      "output":      "daily/subhashitam/",
+      "archivePath": "samskruti/subhashitam",
+      "telegram":    { "enabled": false, "chatIds": [], "tokenSecret": "TELEGRAM_TOKEN" }
+    },
+    {
+      "id": "yogasutra",
+      "source":   { "glob": "data/yoga-sutras/**/*.json" },
+      "fieldMap": { "verse": "sutra.sa", "meaning": "meaning.te", "source": "reference" },
+      "sections": ["verse", "meaning", "source"],
+      "caption":  "{verse}\n\n{meaning}\n\n— {source}\n🕉 {link}",
+      "output":      "daily/yogasutra/",
+      "archivePath": "samskruti/yogasutra",
+      "telegram":    { "enabled": false, "chatIds": [] }
+    }
+    // "stotram" feed added later — see §4 note (meanings are separate _meaning_<lang>.txt)
+  ]
 }
 ```
 
-### smruti example (has word-by-word)
+### smruti feed example (has word-by-word)
 ```jsonc
 {
-  "site": "smruti",
-  "source": { "glob": "data/gita/**/*.json" },
+  "id": "gita",
+  "source":   { "glob": "data/gita/**/*.json" },
   "fieldMap": {
     "verse":      "shloka.devanagari",
-    "wordbyword": "anvaya.wordmeanings",    // ← extra slot samskruti lacks
+    "wordbyword": "anvaya.wordmeanings",     // ← slot samskruti lacks
     "meaning":    "translation.te",
     "source":     "reference"
   },
   "sections": ["verse", "wordbyword", "meaning", "source"],
-  "caption": "{verse}\n\n{wordbyword}\n\n{meaning}\n— {source}\n{link}",
-  "archive": { "repo": "yourname/samskruti-archives", "path": "smruti" }
+  "caption":  "{verse}\n\n{wordbyword}\n\n{meaning}\n\n— {source}\n{link}",
+  "output":      "daily/gita/",
+  "archivePath": "smruti/gita"
 }
+```
+
+**Caption = Full style** (verse + meaning + source + URL). Rendered sample:
+```
+शैले शैले न माणिक्यं मौक्तिकं न गजे गजे ।
+साधवो नहि सर्वत्र चन्दनं न वने वने ॥
+
+Not every mountain holds a gem, nor every elephant a pearl;
+the noble are not everywhere, nor sandalwood in every forest.
+
+— Cāṇakya Nīti
+🌸 samskruti.info
 ```
 
 ---
 
 ## 4. Section system (schema-independent)
 
-- Each **section type** = a small draw function in `daily-tool/src/sections/`
-  (`verse.js`, `wordbyword.js`, `meaning.js`, `source.js`, …).
-- `render.html` loops `config.sections` → resolves each via `config.fieldMap` →
-  reads the value from the verse JSON → calls that section's draw fn.
-- **Missing field → section skipped gracefully.** So samskruti (no `wordbyword`) and
-  smruti (with it) run the identical code; only their config differs.
-- **Adding a NEW kind of section** (never rendered before): add one file in
-  `sections/`, then list it in a site's `config.sections`. Code change once, then
-  config-only for every site.
+- Each **section type** = a small draw fn in `src/sections/` (`verse.js`, `wordbyword.js`,
+  `meaning.js`, `source.js`, plus chrome: `header.js`, `footer.js`, `logo.js`).
+- `render.html` draws: **logo → header** → each `feed.sections` (resolved via `fieldMap`;
+  **missing field → skipped**) → **footer**.
+- New *kind* of section = add one file in `sections/`, then list it in a feed's
+  `sections`. Code change once; config-only thereafter.
+
+**Header / footer / logo are configurable sections** driven by `card` (or per-feed
+override): logo image + position, header heading (supports `{slot}` tokens like
+`{source}`), footer left/right text.
+
+**stotram feed note:** stotram shlokas keep their meanings in separate
+`data/stotram/<slug>/<slug>_meaning_<lang>.txt` files (per section), not one JSON. So the
+`stotram` feed needs a small **source adapter** that enumerates only shlokas which have a
+matching meaning line, and pairs shloka↔meaning. Build subhāṣitam + yogasutra first
+(per-verse JSON, trivial); add the stotram adapter as a second step.
 
 ---
 
 ## 5. Installing on a new site (one-time)
 
-Run the install script from the central repo, targeting a site checkout:
-
+From central, targeting a local site checkout:
 ```bash
 # from samskruti-archives/daily-tool/
-./install.sh --site smruti --target ../../smruti.samskruti.info
+./install.sh --site samskruti --target ../../claude/samskruti
 ```
+It copies/creates in the target site:
+- `.github/workflows/daily.yml` — the caller (§6)
+- `daily/config.json` — template to fill (feeds + card + selection + archive)
+- `daily/index.html`, `daily/daily.css`, `daily/daily.js`, `daily/assets/` — viewing page
+- prints the **manual steps** (§10).
 
-It copies/creates, in the target site repo:
-- `.github/workflows/daily.yml` — the caller (see §6)
-- `daily/config.json` — a template to fill in (source + fieldMap + sections + caption)
-- `daily/index.html`, `daily/daily.css`, `daily/daily.js` — the viewing page
-- prints the **manual steps** (§10): enable Actions write, add `ARCHIVE_TOKEN`.
-
-Re-running `install.sh` later **re-syncs the viewing page** if it changed centrally
-(it never overwrites `config.json`).
+Re-running `install.sh` later **re-syncs the viewing page** if it changed centrally; it
+never overwrites `config.json`. It also generates `order/<site>.<feed>.json` for any feed
+that lacks one (shuffled once from that feed's verse-id list).
 
 ---
 
@@ -169,8 +211,10 @@ Re-running `install.sh` later **re-syncs the viewing page** if it changed centra
 # .github/workflows/daily.yml
 name: Daily verse card
 on:
-  schedule: [{ cron: "0 1 * * *" }]
-  workflow_dispatch: {}            # manual "run now"
+  schedule:
+    - cron: "0 17 * * *"   # 4 AM AEDT / 5 AM AEST  }  gen.js runs only if it is
+    - cron: "0 18 * * *"   # 4 AM AEST / 5 AM AEDT  }  ~4 AM Australia/Sydney (§8)
+  workflow_dispatch: {}     # manual "run now" (ignores the time gate)
 jobs:
   daily:
     if: ${{ hashFiles('daily/config.json') != '' }}   # no-op if daily/ removed
@@ -178,10 +222,9 @@ jobs:
     with:
       config: daily/config.json
     secrets:
-      ARCHIVE_TOKEN: ${{ secrets.ARCHIVE_TOKEN }}
+      ARCHIVE_TOKEN:  ${{ secrets.ARCHIVE_TOKEN }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}   # optional, later
 ```
-
 Pin `@main` for auto-updates, or `@v1` to freeze a version.
 
 ---
@@ -190,69 +233,80 @@ Pin `@main` for auto-updates, or `@v1` to freeze a version.
 
 | Change | How sites get it |
 |---|---|
-| Generator code (`gen.js`, `sections/*`) | **Automatic** next run (checked out from central at run time) |
+| Generator code (`gen.js`, `sections/*`, `renderer.js`) | **Automatic** next run (checked out from central at run time) |
 | Reusable workflow | **Automatic** (sites reference `@main`) |
-| Viewing page (`index.html`/css/js) | Re-run `install.sh` per site (or a dispatch workflow that opens sync PRs) |
-| A site's config / sections / caption | Edit that site's `daily/config.json` — no central change |
+| Viewing page (`site-assets/*`) | Re-run `install.sh` per site (or a dispatch workflow that opens sync PRs) |
+| A site's feeds / sections / caption / chrome | Edit that site's `daily/config.json` — no central change |
 
-So day-to-day + per-site changes are **config-only**; central code updates propagate
-by themselves. Only the served viewing page needs an explicit re-sync.
-
----
-
-## 8. Verse selection (deterministic, no repeats)
-
-`order/<site>.json` is a **fixed shuffled list** of all verse IDs, generated once.
-`index = daysSince(config.epoch) % N` walks it in order — every verse appears once
-before any repeat, and the same date always yields the same verse (reproducible).
-Regenerating `order.json` reshuffles (use sparingly).
+Day-to-day + per-site changes are **config-only**; central code updates propagate by
+themselves. Only the served viewing page needs an explicit re-sync.
 
 ---
 
-## 9. Archiving
+## 8. Run time — 4 AM Australia/Sydney, year-round
 
-The run pushes `<site>/YYYYMMDD/{card.png,caption.txt,run.log}` to the central archive
-repo with `ARCHIVE_TOKEN`. Site repos stay lean (only `today.*`). No local machine
-involved, so no run is ever missed.
+GitHub cron is **UTC and ignores DST**; Sydney switches AEST(UTC+10)↔AEDT(UTC+11). To hit
+4 AM every day:
+- Schedule **two** UTC crons: `0 17 * * *` and `0 18 * * *` (one is 4 AM in each DST state).
+- `gen.js` computes the current `Australia/Sydney` hour and **exits immediately unless it
+  is `config.timezone.hour` (4)**. Idempotent: only one of the two daily triggers proceeds.
+
+Optional guard: gen.js can also skip if today's `today.png` was already produced (so a
+re-run never double-posts).
+
+---
+
+## 9. Verse selection (deterministic, no repeats)
+
+`order/<site>.<feed>.json` is a **fixed shuffled list** of that feed's verse IDs, generated
+once (by `install.sh` or a helper). `index = daysSince(config.selection.epoch) % N`
+(epoch = **2026-07-23**) walks it in order — every verse appears once before any repeat,
+and the same date always yields the same verse. Regenerating reshuffles (use rarely).
 
 ---
 
 ## 10. Manual setup checklist (one-time)
 
-Per site:
+Per site (GitHub web UI):
 1. Repo → Settings → Actions → Workflow permissions → **Read and write**.
-2. Create a **fine-grained PAT** with `contents:write` on `samskruti-archives`; add it
-   as secret **`ARCHIVE_TOKEN`** in the site repo.
-3. Run `install.sh`, then fill `daily/config.json`.
-4. (Optional, later) add secret **`TELEGRAM_TOKEN`** and set `telegram.enabled`.
+2. Create a **fine-grained PAT** with `contents:write` on `samskruti-archives`; add it as
+   secret **`ARCHIVE_TOKEN`** in the site repo.
+3. Run `install.sh`, then fill `daily/config.json` (feeds, chrome, archive).
+4. (Optional, later) add secret **`TELEGRAM_TOKEN`** and set each feed's `telegram.enabled`.
 
-Central repo (once): create `daily-reusable.yml`, `daily-tool/`, and the `samskruti/`
-`smruti/` output folders (done).
+Central repo (once): create `.github/workflows/daily-reusable.yml`, `daily-tool/` (done),
+and the `samskruti/` + `smruti/` output folders (done).
 
 ---
 
 ## 11. Telegram (next iteration — extension point, not yet built)
 
-`gen.js` ends with a `publish` step. Today it only writes files. Next iteration: if
-`config.telegram.enabled`, it reads `TELEGRAM_TOKEN` (secret) + `chatIds` (config) and
-POSTs `today.png` + caption to each chat via the Telegram Bot API — official, free,
-posts to groups/channels. No Part-1 rework; a gated final step.
+`gen.js`'s per-feed loop ends with a `publish` step. Today it writes files only. Next
+iteration: if `feed.telegram.enabled`, read `TELEGRAM_TOKEN` (secret) + `feed.telegram.chatIds`
+(config) and POST `today.png` + caption to each chat via the Telegram Bot API — official,
+free, posts to groups/channels. Because feeds are independent, the Yoga Sūtras feed posts
+to the yoga group and subhāṣitam to its group automatically. No Part-1 rework.
 
 ---
 
 ## 12. Removing the feature (per site)
 
-Delete `daily/` and `.github/workflows/daily.yml`. The caller's `if:` guard means even
-a stray workflow no-ops. Nothing else in the site references it.
+Delete `daily/` and `.github/workflows/daily.yml`. The caller's `if:` guard means a stray
+workflow no-ops. Nothing else in the site references it.
 
 ---
 
 ## 13. Caveats
 
-- **Fonts**: headless Chromium needs Tiro Devanagari / Noto Sans Telugu installed in
-  the runner (the reusable workflow does this) or Indic text renders as boxes.
-- **Cron timing**: not exact; acceptable for a daily card.
+- **Fonts**: headless Chromium needs Tiro Devanagari / Noto Sans Telugu installed in the
+  runner (the reusable workflow does this) or Indic text renders as boxes.
+- **Cron timing**: not exact; acceptable for a daily card. The two-cron + Sydney-hour gate
+  (§8) keeps it at 4 AM across DST.
 - **Secrets**: `ARCHIVE_TOKEN` / `TELEGRAM_TOKEN` are GitHub Secrets — never in the repo.
-- **Duplication**: none — one generator, called by all sites. Only the viewing page is
-  copied (small, rarely changed).
-</content>
+- **Duplication**: none for the generator (one copy, called by all sites). Only the small
+  viewing page is copied per site.
+- **Renderer**: the daily card is a *vendored* copy of the palm-leaf design
+  (`design/palm-leaf-card.html` → `src/renderer.js`), self-contained so the tool has no
+  runtime dependency on any site's `share-card.js`. If you redesign the live card, port the
+  change here too.
+```
