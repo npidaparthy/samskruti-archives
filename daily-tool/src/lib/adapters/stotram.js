@@ -72,7 +72,8 @@ function load(dataRoot, feed, helpers) {
     let title = slug;
     try {
       const meta = JSON.parse(fs.readFileSync(metaFile, 'utf8'));
-      title = meta.title_en || meta.title_te || slug;
+      // Prefer the title in the feed's script (te/sa), fall back to en, then slug.
+      title = meta[`title_${lang}`] || meta.title_te || meta.title_en || slug;
     } catch (e) { /* keep slug */ }
 
     const verses = parseVerses(fs.readFileSync(verseFile, 'utf8'));

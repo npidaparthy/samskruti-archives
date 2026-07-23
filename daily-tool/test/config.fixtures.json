@@ -14,7 +14,7 @@
       "source":   { "glob": "data/subhashitam/**/*.json", "filter": "has:meaning.te" },
       "fieldMap": {
         "verse": "shlokam.te", "meaning": "meaning.te", "commentary": "tatparyam.te",
-        "source": "granthaH.name_en", "chanda": "chandaH"
+        "source": "granthaH.name_te", "chanda": "chandaH"
       },
       "sections": ["verse", "meaning", "commentary"],
       "caption":  "{verse}\n\n{meaning}\n\n— {source}\n🌸 {link}",

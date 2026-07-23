@@ -22,8 +22,8 @@
         "commentary": "meaning.en.long"
       },
       "sections": ["verse", "meaning", "commentary"],
-      "card": { "header": { "heading": "Bhagavad Gītā" } },
-      "caption":  "{verse}\n\n{meaning}\n\n— Bhagavad Gītā\n{link}",
+      "card": { "header": { "heading": "భగవద్గీత" } },
+      "caption":  "{verse}\n\n{meaning}\n\n— భగవద్గీత\n{link}",
       "output": "daily/bg/", "archivePath": "smruti/bg"
     },
 
@@ -33,8 +33,8 @@
       "source":   { "glob": "data/vsn/content/vsn-shlokas.json", "records": "array:shlokas", "idField": "s" },
       "fieldMap": { "verse": ["p1.te", "p2.te", "p3.te", "p4.te"] },
       "sections": ["verse"],
-      "card": { "header": { "heading": "Viṣṇu Sahasranāma" } },
-      "caption":  "{verse}\n\n— Viṣṇu Sahasranāma\n{link}",
+      "card": { "header": { "heading": "విష్ణు సహస్రనామం" } },
+      "caption":  "{verse}\n\n— విష్ణు సహస్రనామం\n{link}",
       "output": "daily/vsn/", "archivePath": "smruti/vsn"
     }
   ]

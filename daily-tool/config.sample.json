@@ -23,7 +23,7 @@
         "verse":      "shlokam.te",
         "meaning":    "meaning.te",
         "commentary": "tatparyam.te",
-        "source":     "granthaH.name_en",
+        "source":     "granthaH.name_te",
         "chanda":     "chandaH"
       },
       "sections": ["verse", "meaning", "commentary"],
@@ -39,7 +39,7 @@
         "verse":      "shlokam.te",
         "meaning":    "meaning.te",
         "commentary": "tatparyam.te",
-        "source":     "granthaH.name_en",
+        "source":     "granthaH.name_te",
         "chanda":     "chandaH"
       },
       "sections": ["verse", "meaning", "commentary"],
