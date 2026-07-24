@@ -28,10 +28,16 @@ function digits(s) {
 }
 
 // Verse blocks separated by blank lines; keep only those ending in ॥<num>॥
-// (drops the title line ॥…॥). Keyed by the numeral.
+// (drops the title line ॥…॥). Keyed by the numeral. Standalone metadata marker
+// lines like [AUDIO_START=…] / [AUDIO_END=…] are stripped first so they don't
+// break the "ends in ॥N॥" test.
 function parseVerses(text) {
+  const cleaned = String(text)
+    .split('\n')
+    .filter(l => !/^\s*\[[^\]]*\]\s*$/.test(l))
+    .join('\n');
   const out = {};
-  const blocks = text.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
+  const blocks = cleaned.split(/\n\s*\n/).map(b => b.trim()).filter(Boolean);
   for (const b of blocks) {
     const m = b.match(/॥\s*([౦-౯0-9]+)\s*॥\s*$/);
     if (!m) continue;

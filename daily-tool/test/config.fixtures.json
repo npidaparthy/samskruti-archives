@@ -3,7 +3,7 @@
   "link": "https://samskruti.info",
   "card": {
     "header": { "heading": "{source}", "align": "center" },
-    "footer": { "left": "సంస్కృతి · संस्कृति", "right": "samskruti.info" },
+    "footer": { "left": "సంస్కృతిః । संस्कृतिः", "middle": "samskruti.info@gmail.com", "right": "https://samskruti.info" },
     "theme":  { "template": "palm-leaf", "accent": "#c8a84b" }
   },
   "selection": { "epoch": "2026-07-23" },

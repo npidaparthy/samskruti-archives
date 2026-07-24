@@ -100,6 +100,7 @@ function processFeed(cfg, feed, args) {
   };
   const footer = {
     left: (card.footer && card.footer.left) || '',
+    middle: (card.footer && card.footer.middle) || '',
     right: (card.footer && card.footer.right) || '',
   };
 
