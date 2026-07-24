@@ -74,19 +74,28 @@
     const ext = extOf(feed);
     const img = $('#card-img');
     const empty = $('#empty');
+    const dl = $('#download');
     empty.hidden = true; img.hidden = false;
+    state.currentImg = null;
+
+    img.onload = () => {
+      // Point Download + Share at the URL that ACTUALLY loaded (jpg/png/webp),
+      // so they keep working even when the on-disk format differs from
+      // card.format (e.g. cards not yet re-rendered after a format change).
+      const url = img.currentSrc || img.src;
+      state.currentImg = url;
+      img.hidden = false; empty.hidden = true;
+      const e2 = url.split('?')[0].split('.').pop();
+      dl.href = url;
+      dl.setAttribute('download', `${feed.id}-today.${e2}`);
+    };
     img.onerror = () => {
-      // Fall back to PNG if the configured format isn't there (e.g. conversion
-      // was skipped that day), then give up gracefully.
+      // Fall back to PNG if the configured format isn't there, then give up.
       if (ext !== 'png' && !/today\.png/.test(img.src)) img.src = `${folder}/today.png?v=${V}`;
-      else { img.hidden = true; empty.hidden = false; }
+      else { img.hidden = true; empty.hidden = false; state.currentImg = null; }
     };
     img.src = `${folder}/today.${ext}?v=${V}`;
     img.alt = `${labelOf(feed)} — today`;
-
-    const dl = $('#download');
-    dl.href = `${folder}/today.${ext}?v=${V}`;
-    dl.setAttribute('download', `${feed.id}-today.${ext}`);
 
     fetch(`${folder}/today.txt?v=${V}`, { cache: 'no-cache' })
       .then((r) => (r.ok ? r.text() : ''))
@@ -97,20 +106,23 @@
   async function share() {
     const feed = state.current;
     if (!feed) return;
-    const folder = folderOf(feed);
-    const ext = extOf(feed);
-    const mime = ext === 'jpg' ? 'image/jpeg' : ext === 'webp' ? 'image/webp' : 'image/png';
+    // Share whatever image actually loaded (falls back to the configured URL).
+    const url = state.currentImg || `${folderOf(feed)}/today.${extOf(feed)}?v=${V}`;
+    const ext = url.split('?')[0].split('.').pop();
+    const mime = ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : ext === 'webp' ? 'image/webp' : 'image/png';
     const caption = $('#caption').textContent || '';
     const link = (state.config && state.config.link) || location.origin;
 
     // Preferred: native share sheet with the image file (mobile).
     try {
-      const resp = await fetch(`${folder}/today.${ext}?v=${V}`);
-      const blob = await resp.blob();
-      const file = new File([blob], `${feed.id}-today.${ext}`, { type: mime });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], text: caption });
-        return;
+      const resp = await fetch(url);
+      if (resp.ok) {
+        const blob = await resp.blob();
+        const file = new File([blob], `${feed.id}-today.${ext}`, { type: mime });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], text: caption });
+          return;
+        }
       }
       if (navigator.share) { await navigator.share({ text: caption, url: link }); return; }
     } catch (e) {
