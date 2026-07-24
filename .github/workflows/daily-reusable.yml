@@ -27,6 +27,16 @@ on:
         required: false
         type: string
         default: ""
+      tool_repo:
+        description: "Central repo holding daily-tool/ + order/ + archive dirs."
+        required: false
+        type: string
+        default: "npidaparthy/samskruti-archives"
+      tool_ref:
+        description: "Ref of the central repo to check out (should match the @ref this workflow is called with)."
+        required: false
+        type: string
+        default: "main"
     secrets:
       ARCHIVE_TOKEN:
         description: "Fine-grained PAT with contents:write on samskruti-archives."
@@ -53,24 +63,15 @@ jobs:
         with:
           path: site
 
-      # 2. Work out which repo/ref THIS reusable workflow came from, so we check
-      #    out the matching generator + order files (README §7 propagation).
-      - name: Resolve central tool repo
-        id: tool
-        run: |
-          ref="${{ github.workflow_ref }}"          # owner/repo/.github/workflows/x.yml@refs/heads/main
-          repo="${ref%%/.github/*}"
-          sha="${ref##*@}"
-          echo "repo=$repo" >> "$GITHUB_OUTPUT"
-          echo "ref=$sha"  >> "$GITHUB_OUTPUT"
-
-      # 3. Central repo: holds daily-tool/ (generator) + order/ + archive dirs.
+      # 2. Central repo: holds daily-tool/ (generator) + order/ + archive dirs.
       #    Checked out with ARCHIVE_TOKEN so we can push archive + order updates.
+      #    (github.workflow_ref points at the CALLER, not this reusable workflow,
+      #    so the central repo/ref are explicit inputs — README §7.)
       - name: Checkout central (samskruti-archives)
         uses: actions/checkout@v4
         with:
-          repository: ${{ steps.tool.outputs.repo }}
-          ref: ${{ steps.tool.outputs.ref }}
+          repository: ${{ inputs.tool_repo }}
+          ref: ${{ inputs.tool_ref }}
           token: ${{ secrets.ARCHIVE_TOKEN }}
           path: central
 
