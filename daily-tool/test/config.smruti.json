@@ -18,8 +18,8 @@
       "source":   { "glob": "data/bg/content/chapters/*.json", "records": "array:shlokas", "idField": ["c", "s"] },
       "fieldMap": {
         "verse":      ["p1.te", "p2.te", "p3.te", "p4.te"],
-        "meaning":    "meaning.en.short",
-        "commentary": "meaning.en.long"
+        "meaning":    "meaning.te.short",
+        "commentary": "meaning.te.long"
       },
       "sections": ["verse", "meaning", "commentary"],
       "card": { "header": { "heading": "భగవద్గీత" } },
