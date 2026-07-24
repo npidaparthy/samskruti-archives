@@ -133,13 +133,17 @@ jobs:
             exit 0
           fi
           git commit -m "daily: refresh verse cards"
-          # main may have moved since checkout — rebase and retry on rejection.
+          # main may have moved since checkout (PR merges, a prior/concurrent daily
+          # run). Replay our commit onto the latest main; since today.* are
+          # generated, our freshly-rendered version wins any conflict (-X theirs =
+          # the commit being rebased), while unrelated changes on main are kept.
           for i in 1 2 3 4 5; do
             if git push origin "HEAD:$BRANCH"; then
               echo "committed=true" >> "$GITHUB_OUTPUT"; exit 0
             fi
-            echo "push rejected; rebasing onto origin/$BRANCH (attempt $i)"
-            git pull --rebase --autostash origin "$BRANCH" || exit 1
+            echo "push rejected; rebasing onto origin/$BRANCH (ours win) — attempt $i"
+            git fetch origin "$BRANCH" || exit 1
+            git rebase -X theirs "origin/$BRANCH" || { git rebase --abort; exit 1; }
           done
           echo "failed to push to site after retries"; exit 1
 
@@ -164,10 +168,12 @@ jobs:
             echo "No archive changes to commit."; exit 0
           fi
           git commit -m "daily: archive ${{ github.repository }} verse cards [skip ci]"
-          # Other sites may push archives concurrently — rebase and retry.
+          # Other sites may push archives concurrently. Replay onto the latest
+          # branch; our generated files (dated archives + rotation orders) win.
           for i in 1 2 3 4 5; do
             if git push origin "HEAD:$CENTRAL_BRANCH"; then exit 0; fi
-            echo "archive push rejected; rebasing onto origin/$CENTRAL_BRANCH (attempt $i)"
-            git pull --rebase --autostash origin "$CENTRAL_BRANCH" || exit 1
+            echo "archive push rejected; rebasing onto origin/$CENTRAL_BRANCH (ours win) — attempt $i"
+            git fetch origin "$CENTRAL_BRANCH" || exit 1
+            git rebase -X theirs "origin/$CENTRAL_BRANCH" || { git rebase --abort; exit 1; }
           done
           echo "failed to push archive after retries"; exit 1
