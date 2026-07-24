@@ -83,6 +83,8 @@ jobs:
       - name: Setup Chrome
         id: chrome
         uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable   # stable Google Chrome honours --screenshot (Chromium snapshots don't)
 
       # 4. Indic fonts — without these headless Chrome renders Telugu/Devanagari
       #    as boxes (README §13).
