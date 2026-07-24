@@ -114,13 +114,15 @@ jobs:
       - name: Generate daily cards
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          FEEDS: ${{ inputs.feeds }}
+          SCRIPT: ${{ inputs.script }}
         run: |
           ARGS=""
           if [ "${{ inputs.force }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             ARGS="$ARGS --force"
           fi
-          [ -n "${{ inputs.feeds }}" ]  && ARGS="$ARGS --feed ${{ inputs.feeds }}"
-          [ -n "${{ inputs.script }}" ] && ARGS="$ARGS --script ${{ inputs.script }}"
+          [ -n "$FEEDS" ]  && ARGS="$ARGS --feed $FEEDS"
+          [ -n "$SCRIPT" ] && ARGS="$ARGS --script $SCRIPT"
           node central/daily-tool/src/gen.js \
             --config "site/${{ inputs.config }}" \
             --data-root site \
