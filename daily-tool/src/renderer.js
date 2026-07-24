@@ -157,11 +157,16 @@
       ctx.stroke();
     }
 
-    // Grain.
-    const off = document.createElement('canvas');
-    off.width = S; off.height = S;
-    helpers.noise(off.getContext('2d'), S, S, 28);
-    ctx.drawImage(off, 0, 0);
+    // Grain. High-frequency noise is what bloats PNG/JPEG, so keep it light and
+    // make it tunable (theme.grain, 0 disables). 14 keeps the palm texture at a
+    // fraction of the file size of the original 28.
+    const grain = (payload.theme && payload.theme.grain != null) ? payload.theme.grain : 14;
+    if (grain > 0) {
+      const off = document.createElement('canvas');
+      off.width = S; off.height = S;
+      helpers.noise(off.getContext('2d'), S, S, grain);
+      ctx.drawImage(off, 0, 0);
+    }
 
     // Vignette.
     const vig = ctx.createRadialGradient(S / 2, S / 2, S * 0.32, S / 2, S / 2, S * 0.72);

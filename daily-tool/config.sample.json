@@ -5,7 +5,9 @@
   "card": {
     "header": { "heading": "{source}", "align": "center" },
     "footer": { "left": "సంస్కృతిః । संस्कृतिः", "middle": "samskruti.info@gmail.com", "right": "https://samskruti.info" },
-    "theme":  { "template": "palm-leaf", "accent": "#c8a84b" }
+    "theme":  { "template": "palm-leaf", "accent": "#c8a84b", "grain": 8 },
+    "format":  "jpeg",
+    "quality": 85
   },
 
   "selection": { "mode": "rotation", "epoch": "2026-07-23" },

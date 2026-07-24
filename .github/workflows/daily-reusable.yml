@@ -22,6 +22,16 @@ on:
         required: false
         type: boolean
         default: false
+      feeds:
+        description: "Comma-separated feed ids to run (blank = all feeds in config)."
+        required: false
+        type: string
+        default: ""
+      script:
+        description: "Verse script override: te | sa | iast (blank = each feed's default)."
+        required: false
+        type: string
+        default: ""
       deploy_workflow:
         description: "Optional site workflow file (e.g. deploy.yml) to dispatch after committing, so Pages rebuilds. Needed because a GITHUB_TOKEN push does not itself trigger the site's deploy. Empty = skip."
         required: false
@@ -90,12 +100,13 @@ jobs:
 
       # 4. Indic fonts — without these headless Chrome renders Telugu/Devanagari
       #    as boxes (README §13).
-      - name: Install Indic fonts
+      - name: Install Indic fonts + image tools
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             fonts-noto-core fonts-noto-ui-core \
-            fonts-lohit-telu fonts-lohit-deva fonts-gargi
+            fonts-lohit-telu fonts-lohit-deva fonts-gargi \
+            imagemagick webp
           sudo fc-cache -f
 
       # 5. Generate every feed's card. Scheduled runs honour the Sydney hour gate
@@ -103,11 +114,15 @@ jobs:
       - name: Generate daily cards
         env:
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          FEEDS: ${{ inputs.feeds }}
+          SCRIPT: ${{ inputs.script }}
         run: |
-          FORCE=""
+          ARGS=""
           if [ "${{ inputs.force }}" = "true" ] || [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            FORCE="--force"
+            ARGS="$ARGS --force"
           fi
+          [ -n "$FEEDS" ]  && ARGS="$ARGS --feed $FEEDS"
+          [ -n "$SCRIPT" ] && ARGS="$ARGS --script $SCRIPT"
           node central/daily-tool/src/gen.js \
             --config "site/${{ inputs.config }}" \
             --data-root site \
@@ -115,7 +130,7 @@ jobs:
             --order-dir central/daily-tool/order \
             --archive-root central \
             --chrome "${{ steps.chrome.outputs.chrome-path }}" \
-            $FORCE
+            $ARGS
 
       # 6. Commit the refreshed today.* back to the SITE repo (overwrite).
       - name: Commit to site
