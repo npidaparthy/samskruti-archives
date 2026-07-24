@@ -60,15 +60,16 @@ function convertImage(pngPath, outPath, format, quality) {
   } catch (e) { /* fall through */ }
   return false;
 }
-// Write today.<ext> into dir (converting from PNG if needed). Returns the ext used.
-function writeImage(dir, png, format, quality) {
+// Write <basename>.<ext> into dir (converting from PNG if needed). Returns the ext.
+function writeImage(dir, png, format, quality, basename) {
+  basename = basename || 'today';
   fs.mkdirSync(dir, { recursive: true });
-  const pngPath = path.join(dir, 'today.png');
+  const pngPath = path.join(dir, `${basename}.png`);
   fs.writeFileSync(pngPath, png);
   const fmt = String(format || 'png').toLowerCase();
   if (fmt === 'png') return 'png';
   const ext = fmt === 'jpeg' ? 'jpg' : fmt;
-  const outPath = path.join(dir, `today.${ext}`);
+  const outPath = path.join(dir, `${basename}.${ext}`);
   if (convertImage(pngPath, outPath, fmt, quality)) {
     try { fs.unlinkSync(pngPath); } catch (e) { /* ignore */ }
     return ext;
@@ -122,86 +123,99 @@ function processFeed(cfg, feed, args) {
   const chosen = byId.get(pickedId);
   if (!chosen) { log(`feed "${feed.id}": could not resolve id ${pickedId}`); return null; }
 
-  // 3. Resolve fields.
-  const slots = dataLib.resolveSlots(chosen.rec, feed.fieldMap);
+  // 3–6. Render one card per language variant, then write + archive.
+  // No `variants` → a single default card (today.<ext>). With variants → also
+  // today.<id>.<ext> + today.<id>.txt per variant; the first variant is the
+  // default (today.<ext>) so single-language consumers keep working.
   const card = config.feedCard(cfg, feed);
-  const script = args.script || feed.script || cfg.script || 'te';
-
-  // Build the body sections list (config order; missing values skipped by renderer).
-  const sections = feed.sections.map(type => {
-    const item = { type, value: slots[type] };
-    if (type === 'verse') {
-      item.meta = { script, syllables: config.parseSyllables(slots.chanda || slots.metre) };
-    }
-    return item;
-  });
-
-  // Header band: heading from card.header (token-filled) + a metre line.
-  const headingTpl = (card.header && card.header.heading) || '{source}';
-  const header = {
-    heading: config.fillTokens(headingTpl, slots),
-    metre: slots.metre ? String(slots.metre) : metreDisplay(slots.chanda),
-    align: (card.header && card.header.align) || 'center',
-  };
-  const footer = {
-    left: (card.footer && card.footer.left) || '',
-    middle: (card.footer && card.footer.middle) || '',
-    right: (card.footer && card.footer.right) || '',
-  };
-
-  // Logo: default mark unless card.logo:false. A configured file path
-  // (card.logo.src) is inlined as a data-URI; failure falls back to the glyph.
-  let logo = null;
-  if (card.logo !== false) {
-    logo = Object.assign({ position: 'header-left', size: 52 }, card.logo || {});
-    if (logo.src && !logo.imageSrc) {
-      try {
-        const p = path.resolve(dataRoot, logo.src);
-        const ext = (path.extname(p).slice(1) || 'png').toLowerCase();
-        logo.imageSrc = `data:image/${ext};base64,${fs.readFileSync(p).toString('base64')}`;
-      } catch (e) { log(`feed "${feed.id}": logo asset ${logo.src} not found — using default mark`); }
-    }
-  }
-
-  const payload = {
-    size: cfg.size || 1080,
-    script,
-    theme: Object.assign({}, card.theme, args.grain != null ? { grain: Number(args.grain) } : {}),
-    header,
-    footer,
-    logo,
-    sections,
-  };
-
-  // 4. Render.
-  log(`feed "${feed.id}": day ${dayIndex} → ${pickedId} (${chosen.file.replace(dataRoot + path.sep, '')})`);
-  const png = renderToPng(payload, { chrome: args.chrome, size: payload.size });
-
-  // 5. Write today.* into the feed's output dir (format from card config; CLI overrides).
   const fmt = args.format || card.format || 'png';
   const quality = args.quality || card.quality || 90;
   const outDir = path.resolve(outRoot, feed.output || `daily/${feed.id}/`);
-  const ext = writeImage(outDir, png, fmt, quality);
+  const archiveRoot = path.resolve(args['archive-root'] || REPO_ROOT);
+  const archDir = path.join(archiveRoot, feed.archivePath || `misc/${feed.id}`, ymd(todayISO));
+  const doArchive = !args.flags.noArchive && feed.archivePath;
 
-  const caption = config.fillTokens(feed.caption || '', Object.assign({ link: cfg.link || '' }, slots));
-  fs.writeFileSync(path.join(outDir, 'today.txt'), caption + '\n');
+  const hasVariants = Array.isArray(feed.variants) && feed.variants.length > 0;
+  const variants = hasVariants ? feed.variants : [{ id: null }];
+  const logo = buildLogo(card, dataRoot, feed);
 
-  const outFile = path.join(outDir, `today.${ext}`);
-  const bytes = fs.statSync(outFile).size;
-  const logLine = `${new Date().toISOString()} feed=${feed.id} date=${todayISO} index=${dayIndex} n=${order.length} id=${pickedId} file=${path.basename(chosen.file)} out=today.${ext} bytes=${bytes}`;
+  log(`feed "${feed.id}": day ${dayIndex} → ${pickedId} (${chosen.file.replace(dataRoot + path.sep, '')})`);
+
+  const produced = [];
+  variants.forEach((v, i) => {
+    const script = args.script || v.script || feed.script || cfg.script || 'te';
+    const fieldMap = Object.assign({}, feed.fieldMap, v.fieldMap || {});
+    const slots = dataLib.resolveSlots(chosen.rec, fieldMap);
+
+    const sections = feed.sections.map(type => {
+      const item = { type, value: slots[type] };
+      if (type === 'verse') item.meta = { script, syllables: config.parseSyllables(slots.chanda || slots.metre) };
+      return item;
+    });
+
+    const headingTpl = (v.card && v.card.header && v.card.header.heading) ||
+      (card.header && card.header.heading) || '{source}';
+    const header = {
+      heading: config.fillTokens(headingTpl, slots),
+      metre: slots.metre ? String(slots.metre) : metreDisplay(slots.chanda),
+      align: (card.header && card.header.align) || 'center',
+    };
+    const footer = {
+      left: (card.footer && card.footer.left) || '',
+      middle: (card.footer && card.footer.middle) || '',
+      right: (card.footer && card.footer.right) || '',
+    };
+
+    const payload = {
+      size: cfg.size || 1080, script,
+      theme: Object.assign({}, card.theme, args.grain != null ? { grain: Number(args.grain) } : {}),
+      header, footer, logo, sections,
+    };
+    const png = renderToPng(payload, { chrome: args.chrome, size: payload.size });
+    const caption = config.fillTokens(v.caption || feed.caption || '', Object.assign({ link: cfg.link || '' }, slots));
+
+    // Basenames to write: the variant's own (today.<id>) and, for the first
+    // variant, the default (today).
+    const bases = [];
+    if (v.id) bases.push(`today.${v.id}`);
+    if (!v.id || i === 0) bases.push('today');
+
+    let ext = fmt === 'jpeg' ? 'jpg' : fmt;
+    bases.forEach(base => {
+      ext = writeImage(outDir, png, fmt, quality, base);
+      fs.writeFileSync(path.join(outDir, `${base}.txt`), caption + '\n');
+      if (doArchive) {
+        writeImage(archDir, png, fmt, quality, base);
+        fs.writeFileSync(path.join(archDir, `${base}.txt`), caption + '\n');
+      }
+    });
+    const primary = v.id ? `today.${v.id}` : 'today';
+    const bytes = fs.statSync(path.join(outDir, `${primary}.${ext}`)).size;
+    log(`feed "${feed.id}"${v.id ? ` [${v.id}]` : ''}: wrote ${primary}.${ext} (${(bytes / 1024 | 0)} KB)`);
+    produced.push({ id: v.id, ext });
+  });
+
+  const langs = produced.map(p => p.id).filter(Boolean).join(',') || 'default';
+  const logLine = `${new Date().toISOString()} feed=${feed.id} date=${todayISO} index=${dayIndex} n=${order.length} id=${pickedId} file=${path.basename(chosen.file)} variants=${langs}`;
   fs.writeFileSync(path.join(outDir, 'today.log'), logLine + '\n');
-  log(`feed "${feed.id}": wrote ${outFile} (${(bytes / 1024 | 0)} KB)`);
+  if (doArchive) fs.writeFileSync(path.join(archDir, 'today.log'), logLine + '\n');
 
-  // 6. Archive a dated copy centrally.
-  if (!args.flags.noArchive && feed.archivePath) {
-    const archiveRoot = path.resolve(args['archive-root'] || REPO_ROOT);
-    const archDir = path.join(archiveRoot, feed.archivePath, ymd(todayISO));
-    writeImage(archDir, png, fmt, quality);
-    fs.writeFileSync(path.join(archDir, 'today.txt'), caption + '\n');
-    log(`feed "${feed.id}": archived → ${archDir}`);
+  return { feed: feed.id, id: pickedId, outDir, variants: produced };
+}
+
+// Logo payload: default ॐ mark unless card.logo:false; a configured file path
+// (card.logo.src) is inlined as a data-URI (falls back to the glyph on failure).
+function buildLogo(card, dataRoot, feed) {
+  if (card.logo === false) return null;
+  const logo = Object.assign({ position: 'header-left', size: 52 }, card.logo || {});
+  if (logo.src && !logo.imageSrc) {
+    try {
+      const p = path.resolve(dataRoot, logo.src);
+      const ext = (path.extname(p).slice(1) || 'png').toLowerCase();
+      logo.imageSrc = `data:image/${ext};base64,${fs.readFileSync(p).toString('base64')}`;
+    } catch (e) { log(`feed "${feed.id}": logo asset ${logo.src} not found — using default mark`); }
   }
-
-  return { feed: feed.id, id: pickedId, outDir };
+  return logo;
 }
 
 function main() {

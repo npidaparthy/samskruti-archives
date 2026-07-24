@@ -51,6 +51,17 @@ body {
 .tab:hover { color: var(--ink); border-color: var(--accent); }
 .tab.active { background: var(--accent); color: #1a1208; border-color: var(--accent); font-weight: 600; }
 
+.langs { width: 100%; max-width: 620px; display: flex; gap: .4rem; }
+.langs:empty { display: none; }
+.lang-btn {
+  font: inherit; font-size: .78rem;
+  padding: .3rem .7rem; border-radius: 999px; cursor: pointer;
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--line); transition: all .15s;
+}
+.lang-btn:hover { color: var(--ink); border-color: var(--accent); }
+.lang-btn.active { background: var(--accent-2); color: #1a1208; border-color: var(--accent-2); font-weight: 600; }
+
 .stage { width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 1rem; }
 
 .card {

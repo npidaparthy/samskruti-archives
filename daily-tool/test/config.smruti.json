@@ -1,41 +1,112 @@
 {
   "site": "smruti",
   "link": "https://gita.samskruti.info",
-
   "card": {
-    "header": { "align": "center" },
-    "footer": { "left": "స్మృతిః । स्मृतिः", "middle": "samskruti.info@gmail.com", "right": "https://gita.samskruti.info" },
-    "theme":  { "template": "palm-leaf", "accent": "#c8a84b" }
+    "header": {
+      "align": "center"
+    },
+    "footer": {
+      "left": "స్మృతిః । स्मृतिः",
+      "middle": "samskruti.info@gmail.com",
+      "right": "https://gita.samskruti.info"
+    },
+    "theme": {
+      "template": "palm-leaf",
+      "accent": "#c8a84b"
+    }
   },
-
-  "selection": { "mode": "rotation", "epoch": "2026-07-23" },
-  "timezone":  { "name": "Australia/Sydney", "hour": 4 },
-
+  "selection": {
+    "mode": "rotation",
+    "epoch": "2026-07-23"
+  },
+  "timezone": {
+    "name": "Australia/Sydney",
+    "hour": 4
+  },
   "feeds": [
     {
       "id": "bg",
       "script": "te",
-      "source":   { "glob": "data/bg/content/chapters/*.json", "records": "array:shlokas", "idField": ["c", "s"] },
+      "source": {
+        "glob": "data/bg/content/chapters/*.json",
+        "records": "array:shlokas",
+        "idField": [
+          "c",
+          "s"
+        ]
+      },
       "fieldMap": {
-        "verse":      ["p1.te", "p2.te", "p3.te", "p4.te"],
-        "meaning":    "meaning.te.short",
+        "verse": [
+          "p1.te",
+          "p2.te",
+          "p3.te",
+          "p4.te"
+        ],
+        "meaning": "meaning.te.short",
         "commentary": "meaning.te.long"
       },
-      "sections": ["verse", "meaning", "commentary"],
-      "card": { "header": { "heading": "భగవద్గీత" } },
-      "caption":  "{verse}\n\n{meaning}\n\n— భగవద్గీత\n{link}",
-      "output": "daily/bg/", "archivePath": "smruti/bg"
+      "sections": [
+        "verse",
+        "meaning",
+        "commentary"
+      ],
+      "card": {
+        "header": {
+          "heading": "భగవద్గీత"
+        }
+      },
+      "caption": "{verse}\n\n{meaning}\n\n— భగవద్గీత\n{link}",
+      "output": "daily/bg/",
+      "archivePath": "smruti/bg",
+      "variants": [
+        {
+          "id": "te",
+          "label": "తెలుగు"
+        },
+        {
+          "id": "en",
+          "label": "English",
+          "fieldMap": {
+            "verse": [
+              "p1.ro",
+              "p2.ro",
+              "p3.ro",
+              "p4.ro"
+            ],
+            "meaning": "meaning.en.short",
+            "commentary": "meaning.en.long"
+          },
+          "script": "iast"
+        }
+      ]
     },
-
     {
       "id": "vsn",
       "script": "te",
-      "source":   { "glob": "data/vsn/content/vsn-shlokas.json", "records": "array:shlokas", "idField": "s" },
-      "fieldMap": { "verse": ["p1.te", "p2.te", "p3.te", "p4.te"] },
-      "sections": ["verse"],
-      "card": { "header": { "heading": "విష్ణు సహస్రనామం" } },
-      "caption":  "{verse}\n\n— విష్ణు సహస్రనామం\n{link}",
-      "output": "daily/vsn/", "archivePath": "smruti/vsn"
+      "source": {
+        "glob": "data/vsn/content/vsn-shlokas.json",
+        "records": "array:shlokas",
+        "idField": "s"
+      },
+      "fieldMap": {
+        "verse": [
+          "p1.te",
+          "p2.te",
+          "p3.te",
+          "p4.te"
+        ]
+      },
+      "sections": [
+        "verse"
+      ],
+      "card": {
+        "header": {
+          "heading": "విష్ణు సహస్రనామం"
+        }
+      },
+      "caption": "{verse}\n\n— విష్ణు సహస్రనామం\n{link}",
+      "output": "daily/vsn/",
+      "archivePath": "smruti/vsn"
     }
   ]
 }
