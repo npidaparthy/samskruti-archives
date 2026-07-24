@@ -1,0 +1,98 @@
+/* Daily verse viewing page — palm-leaf theme, mobile-first, self-contained. */
+:root {
+  --bg: #17100a;
+  --panel: #1f160d;
+  --ink: #f3e6cb;
+  --muted: #b79a63;
+  --accent: #c8a84b;
+  --accent-2: #e0b85a;
+  --line: rgba(200, 168, 75, 0.22);
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  --fs-body: "Noto Sans Telugu", "Kohinoor Telugu", "Telugu Sangam MN",
+             "Noto Serif Devanagari", "Georgia", serif;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4ecd8; --panel: #fbf5e6; --ink: #3a2a12; --muted: #8a6d34;
+    --accent: #a87f24; --accent-2: #8b6a1c; --line: rgba(120, 90, 20, 0.25);
+    --shadow: 0 18px 46px rgba(90, 60, 10, 0.28);
+  }
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--ink); }
+body {
+  font-family: var(--fs-body);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+.top {
+  width: 100%; max-width: 620px;
+  display: flex; align-items: baseline; justify-content: space-between;
+}
+.brand { font-size: 1.35rem; font-weight: 700; color: var(--accent-2); text-decoration: none; letter-spacing: .02em; }
+.date { font-size: .8rem; color: var(--muted); letter-spacing: .04em; }
+
+.tabs {
+  width: 100%; max-width: 620px;
+  display: flex; flex-wrap: wrap; gap: .4rem;
+}
+.tab {
+  font: inherit; font-size: .82rem;
+  padding: .38rem .8rem; border-radius: 999px; cursor: pointer;
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--line); transition: all .15s;
+}
+.tab:hover { color: var(--ink); border-color: var(--accent); }
+.tab.active { background: var(--accent); color: #1a1208; border-color: var(--accent); font-weight: 600; }
+
+.stage { width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 1rem; }
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+  min-height: 120px;
+  display: flex; align-items: center; justify-content: center;
+}
+.card img { display: block; width: 100%; height: auto; }
+.card img[hidden] { display: none; }
+.empty { padding: 3rem 1rem; color: var(--muted); font-size: .9rem; text-align: center; }
+
+.actions { display: flex; gap: .6rem; }
+.btn {
+  font: inherit; font-size: .9rem; font-weight: 600;
+  flex: 1; text-align: center; text-decoration: none;
+  padding: .7rem 1rem; border-radius: 10px; cursor: pointer;
+  background: var(--accent); color: #1a1208; border: 1px solid var(--accent);
+  transition: filter .15s;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; color: var(--accent-2); }
+
+.caption {
+  white-space: pre-wrap;
+  line-height: 1.7;
+  font-size: 1rem;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem 1.1rem;
+}
+.caption:empty { display: none; }
+
+.foot { margin-top: auto; padding-top: .5rem; font-size: .8rem; }
+.foot a { color: var(--muted); text-decoration: none; }
+.foot a:hover { color: var(--accent); }
+
+@media (min-width: 640px) {
+  .card { border-radius: 18px; }
+}
