@@ -182,9 +182,14 @@ function processFeed(cfg, feed, args) {
 
     let ext = fmt === 'jpeg' ? 'jpg' : fmt;
     bases.forEach(base => {
+      // Live site: write every basename (per-language + the language-neutral
+      // default today.* for stable links / fallback).
       ext = writeImage(outDir, png, fmt, quality, base);
       fs.writeFileSync(path.join(outDir, `${base}.txt`), caption + '\n');
-      if (doArchive) {
+      // Archive: skip the default copy when variants exist — the per-language
+      // today.<id>.* already capture everything, so don't duplicate today.*.
+      const isDefaultCopy = base === 'today' && hasVariants;
+      if (doArchive && !isDefaultCopy) {
         writeImage(archDir, png, fmt, quality, base);
         fs.writeFileSync(path.join(archDir, `${base}.txt`), caption + '\n');
       }
