@@ -22,6 +22,11 @@ on:
         required: false
         type: boolean
         default: false
+      deploy_workflow:
+        description: "Optional site workflow file (e.g. deploy.yml) to dispatch after committing, so Pages rebuilds. Needed because a GITHUB_TOKEN push does not itself trigger the site's deploy. Empty = skip."
+        required: false
+        type: string
+        default: ""
     secrets:
       ARCHIVE_TOKEN:
         description: "Fine-grained PAT with contents:write on samskruti-archives."
@@ -39,6 +44,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # push refreshed daily/* back to the calling site repo
+      actions: write  # dispatch the site's deploy workflow (Pages rebuild)
     steps:
       # 1. The calling site repo (github.repository is the caller for reusable
       #    workflows), so a default checkout gives us the site.
@@ -108,6 +114,7 @@ jobs:
 
       # 6. Commit the refreshed today.* back to the SITE repo (overwrite).
       - name: Commit to site
+        id: commit
         working-directory: site
         run: |
           git config user.name  "daily-bot"
@@ -115,10 +122,20 @@ jobs:
           git add -A daily/ 2>/dev/null || true
           if git diff --cached --quiet; then
             echo "No site changes to commit."
+            echo "committed=false" >> "$GITHUB_OUTPUT"
           else
-            git commit -m "daily: refresh verse cards [skip ci]"
+            git commit -m "daily: refresh verse cards"
             git push
+            echo "committed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # 6b. Rebuild the site. A push made with GITHUB_TOKEN does not trigger the
+      #     site's own workflows, so dispatch its deploy explicitly (if configured).
+      - name: Trigger site deploy
+        if: steps.commit.outputs.committed == 'true' && inputs.deploy_workflow != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run "${{ inputs.deploy_workflow }}" --repo "${{ github.repository }}"
 
       # 7. Push dated archive copies + any rotation-order updates to central.
       - name: Commit to central archive
