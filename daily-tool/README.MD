@@ -382,4 +382,35 @@ SAMSKRUTI_DATA=/path/to/samskruti SMRUTI_DATA=/path/to/smruti node test/run.js
 Output PNGs land in `.local/test-out/<scenario>/` for eyeballing. `.local/` is a
 git-ignored scratch area (local test data copies + outputs) — nothing in it is committed.
 `test/config.*.json` are working references for every supported layout.
+
+---
+
+## 16. Language variants (Te / En / …)
+
+A feed can declare `variants` to render the card in several languages. Each variant
+overrides the feed's `script` / `fieldMap` / `caption` / `card.header`; the first is the
+default (`today.<ext>`), and each writes `today.<id>.<ext>` + `today.<id>.txt`.
+
+```jsonc
+"feeds": [{
+  "id": "subhashitam",
+  "fieldMap": { "verse": "shlokam.te", "meaning": "meaning.te",
+                "commentary": "tatparyam.te", "source": "granthaH.name_te", "chanda": "chandaH" },
+  "variants": [
+    { "id": "te", "label": "తెలుగు" },                 // uses the base fieldMap
+    { "id": "en", "label": "English", "script": "iast",
+      "fieldMap": { "verse": "shlokam.iast", "meaning": "meaning.en",
+                    "commentary": "tatparyam.en", "source": "granthaH.name_en" } }
+  ]
+}]
+```
+
+The verse script and the meaning language are independent — e.g. yoga-sūtras keeps the
+Devanag: verse in both variants and only switches the meaning (`en` overrides
+`{ "meaning": "en.s", "commentary": "en.d" }`).
+
+The viewing page reads `variants` and shows a language toggle when ≥ 2 languages exist
+across the feeds; the chosen language is remembered (localStorage) and swaps the card
+image + caption. A feed without a variant for the chosen language falls back to its
+default card. Feeds with no `variants` render a single card as before.
 ```
