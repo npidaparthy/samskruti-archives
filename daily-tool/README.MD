@@ -214,18 +214,46 @@ on:
   schedule:
     - cron: "0 17 * * *"   # 4 AM AEDT / 5 AM AEST  }  gen.js runs only if it is
     - cron: "0 18 * * *"   # 4 AM AEST / 5 AM AEDT  }  ~4 AM Australia/Sydney (§8)
-  workflow_dispatch: {}     # manual "run now" (ignores the time gate)
+  workflow_dispatch:        # manual "run now" (ignores the time gate)
+    inputs:
+      feeds:                # comma-separated feed ids, blank = all
+        required: false
+        default: ""
+      script:               # te | sa | iast, blank = each feed's default
+        required: false
+        default: ""
+
+# BOTH are required: the reusable workflow's job declares contents:write AND
+# actions:write, and a caller must grant at least what the reusable declares —
+# even a site that never dispatches a deploy (omitting either → "invalid
+# workflow file" before the job starts).
+permissions:
+  contents: write
+  actions: write
+
 jobs:
   daily:
-    if: ${{ hashFiles('daily/config.json') != '' }}   # no-op if daily/ removed
     uses: yourname/samskruti-archives/.github/workflows/daily-reusable.yml@main
     with:
       config: daily/config.json
+      force:  ${{ github.event_name == 'workflow_dispatch' }}
+      feeds:  ${{ inputs.feeds }}
+      script: ${{ inputs.script }}
+      # Only for sites whose Pages build is itself an Actions workflow (e.g.
+      # peaceiris/actions-gh-pages): dispatch it after the daily commit so Pages
+      # rebuilds — a GITHUB_TOKEN push does not trigger it. OMIT this for sites
+      # using Pages "Deploy from a branch", which publish on the commit itself.
+      deploy_workflow: deploy.yml
     secrets:
       ARCHIVE_TOKEN:  ${{ secrets.ARCHIVE_TOKEN }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}   # optional, later
 ```
 Pin `@main` for auto-updates, or `@v1` to freeze a version.
+
+> **Don't** add `if: ${{ hashFiles('daily/config.json') != '' }}` to the caller
+> job: a caller `if` is evaluated **before any checkout**, so `hashFiles` is
+> always empty and the job would always skip. To remove the feature, delete this
+> workflow file (§12).
 
 ---
 
