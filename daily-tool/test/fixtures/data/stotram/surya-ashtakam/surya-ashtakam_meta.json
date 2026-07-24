@@ -1,0 +1,30 @@
+{
+  "slug": "surya-ashtakam",
+  "title_te": "శ్రీసూర్యాష్టకమ్",
+  "title_sa": "श्रीसूर्याष्टकम्",
+  "title_en": "śrīsūryāṣṭakam",
+  "description_en": "The suryastakam is a Vedic hymn composed by Shiva, consisting of eight verses in the Totaka meter. It is a devotional work dedicated to the deity, praising his divine attributes and seeking his blessings.",
+  "description_te": "శ్రీసూర్యాష్టకమ్, శివప్రోక్తం వేద స్తోత్రం, ఇది ఎనిమిది శ్లోకాలతో కూడి, సూర్యభగవానుని గుణములను స్తుతించి, ఆయన ఆశీర్వాదం పొందేందుకు భక్తులకు మార్గనిర్దేశం చేస్తుంది.",
+  "theme": "theme-bhakti",
+  "tags": [
+    "surya",
+    "ashtakam",
+    "sun"
+  ],
+  "synonyms": [],
+  "youtube_url": "",
+  "images": [
+    "assets/images/surya-ashtakam-01.svg",
+    "assets/images/surya-ashtakam-02.svg",
+    "assets/images/surya-ashtakam-03.svg"
+  ],
+  "sections": [
+    {
+      "id": "main",
+      "title_te": "శ్రీసూర్యాష్టకమ్",
+      "title_sa": "श्रीसूर्याष्टकम्",
+      "title_en": "śrīsūryāṣṭakam",
+      "file": "surya-ashtakam.txt"
+    }
+  ]
+}

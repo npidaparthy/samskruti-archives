@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Daily card — render harness</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #1a1208; }
+  #card { display: block; width: 1080px; height: 1080px; }
+</style>
+
+<!--
+  This page is a standalone preview/debug harness. gen.js does NOT load it
+  directly — it assembles an equivalent page in memory (lib/render.js) and
+  screenshots it with headless Chrome, auto-discovering every file in sections/.
+
+  Keep the <script> list below in sync with sections/ if you use this harness to
+  eyeball a design change. `_text.js` must load before the sections that use it.
+-->
+<script src="renderer.js"></script>
+<script src="sections/_text.js"></script>
+<script src="sections/header.js"></script>
+<script src="sections/footer.js"></script>
+<script src="sections/logo.js"></script>
+<script src="sections/verse.js"></script>
+<script src="sections/meaning.js"></script>
+<script src="sections/commentary.js"></script>
+<script src="sections/source.js"></script>
+<script src="sections/wordbyword.js"></script>
+</head>
+<body>
+<canvas id="card" width="1080" height="1080"></canvas>
+<script>
+  // A sample payload (shape identical to what gen.js builds) so the harness
+  // renders something when opened directly in a browser.
+  var SAMPLE = {
+    size: 1080,
+    script: 'te',
+    theme: { template: 'palm-leaf', accent: '#c8a84b' },
+    header: { heading: 'Traditional subhāṣita', metre: 'అనుష్టుప్ (Anuṣṭup)', align: 'center' },
+    footer: { left: 'సంస్కృతి · संस्कृति', right: 'https://samskruti.info' },
+    logo: null,
+    sections: [
+      { type: 'verse', value: 'విద్యా దదాతి వినయం వినయాద్యాతి పాత్రతామ్ ।\nపాత్రత్వాద్ధనమాప్నోతి ధనాద్ధర్మం తతః సుఖమ్ ॥', meta: { script: 'te', syllables: 8 } },
+      { type: 'meaning', value: 'విద్య వినయమును ఇస్తుంది; వినయమువల్ల పాత్రత కలుగుతుంది; పాత్రతవల్ల ధనము లభిస్తుంది; ధనమువల్ల ధర్మాచరణ సాధ్యమవుతుంది; ధర్మంవల్ల సుఖము కలుగుతుంది.' },
+      { type: 'commentary', value: 'విద్య కేవలం జ్ఞానమును మాత్రమే కాదు — వినయమును కూడా ప్రసాదిస్తుంది. నిజమైన విద్య అహంకారమును తగ్గించి, వ్యక్తిని సమాజానికి అర్హుని చేస్తుంది.' }
+    ]
+  };
+  window.addEventListener('load', function () {
+    var p = (window.__PAYLOAD__ || SAMPLE);
+    window.render(p);
+  });
+</script>
+</body>
+</html>
