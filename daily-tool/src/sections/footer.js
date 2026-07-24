@@ -18,16 +18,17 @@
       ctx.fillStyle = colors.ink; ctx.textAlign = 'left';
       ctx.fillText(left, CONT, footerBaseline);
 
-      // Contact — centred.
+      // Contact — centred. Near-black (ink) at weight 600 so it stays legible
+      // over the darkened vignette at the card's bottom.
       if (middle) {
-        ctx.font = '500 20px "Georgia",serif';
-        ctx.fillStyle = colors.ink2; ctx.textAlign = 'center';
+        ctx.font = '600 20px "Georgia",serif';
+        ctx.fillStyle = colors.ink; ctx.textAlign = 'center';
         ctx.fillText(middle, S / 2, footerBaseline);
       }
 
       // URL — right.
-      ctx.font = '500 22px "Georgia",serif';
-      ctx.fillStyle = colors.ink2; ctx.textAlign = 'right';
+      ctx.font = '600 22px "Georgia",serif';
+      ctx.fillStyle = colors.ink; ctx.textAlign = 'right';
       ctx.fillText(right, S - CONT, footerBaseline);
 
       return footerBaseline;

@@ -31,12 +31,13 @@ jobs:
         with:
           chrome-version: stable   # stable Google Chrome honours --screenshot (Chromium snapshots may not)
 
-      - name: Install Indic fonts
+      - name: Install Indic fonts + image tools
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             fonts-noto-core fonts-noto-ui-core \
-            fonts-lohit-telu fonts-lohit-deva fonts-gargi
+            fonts-lohit-telu fonts-lohit-deva fonts-gargi \
+            imagemagick webp
           sudo fc-cache -f
 
       - name: Chrome smoke test
@@ -61,5 +62,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: daily-cards
-          path: daily-tool/.local/test-out/**/today.png
+          path: |
+            daily-tool/.local/test-out/**/today.png
+            daily-tool/.local/test-out/**/today.jpg
+            daily-tool/.local/test-out/**/today.webp
           if-no-files-found: warn

@@ -22,6 +22,12 @@
   function labelOf(feed) {
     return feed.label || String(feed.id).replace(/(^|[-_])(\w)/g, (_, a, b) => (a ? ' ' : '') + b.toUpperCase());
   }
+  // Image extension from the (feed or site) card.format; jpeg -> jpg.
+  function extOf(feed) {
+    const c = state.config || {};
+    const f = (feed.card && feed.card.format) || (c.card && c.card.format) || 'png';
+    return f === 'jpeg' ? 'jpg' : f;
+  }
 
   async function boot() {
     try {
@@ -65,16 +71,22 @@
     document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t.dataset.id === feed.id));
 
     const folder = folderOf(feed);
+    const ext = extOf(feed);
     const img = $('#card-img');
     const empty = $('#empty');
     empty.hidden = true; img.hidden = false;
-    img.onerror = () => { img.hidden = true; empty.hidden = false; };
-    img.src = `${folder}/today.png?v=${V}`;
+    img.onerror = () => {
+      // Fall back to PNG if the configured format isn't there (e.g. conversion
+      // was skipped that day), then give up gracefully.
+      if (ext !== 'png' && !/today\.png/.test(img.src)) img.src = `${folder}/today.png?v=${V}`;
+      else { img.hidden = true; empty.hidden = false; }
+    };
+    img.src = `${folder}/today.${ext}?v=${V}`;
     img.alt = `${labelOf(feed)} — today`;
 
     const dl = $('#download');
-    dl.href = `${folder}/today.png?v=${V}`;
-    dl.setAttribute('download', `${feed.id}-today.png`);
+    dl.href = `${folder}/today.${ext}?v=${V}`;
+    dl.setAttribute('download', `${feed.id}-today.${ext}`);
 
     fetch(`${folder}/today.txt?v=${V}`, { cache: 'no-cache' })
       .then((r) => (r.ok ? r.text() : ''))
@@ -86,14 +98,16 @@
     const feed = state.current;
     if (!feed) return;
     const folder = folderOf(feed);
+    const ext = extOf(feed);
+    const mime = ext === 'jpg' ? 'image/jpeg' : ext === 'webp' ? 'image/webp' : 'image/png';
     const caption = $('#caption').textContent || '';
     const link = (state.config && state.config.link) || location.origin;
 
     // Preferred: native share sheet with the image file (mobile).
     try {
-      const resp = await fetch(`${folder}/today.png?v=${V}`);
+      const resp = await fetch(`${folder}/today.${ext}?v=${V}`);
       const blob = await resp.blob();
-      const file = new File([blob], `${feed.id}-today.png`, { type: 'image/png' });
+      const file = new File([blob], `${feed.id}-today.${ext}`, { type: mime });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], text: caption });
         return;

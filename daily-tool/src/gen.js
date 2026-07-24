@@ -28,9 +28,54 @@ const config = require('./lib/config');
 const dataLib = require('./lib/data');
 const rotation = require('./lib/rotation');
 const { renderToPng } = require('./lib/render');
+const { spawnSync } = require('child_process');
 
 const SRC_DIR = __dirname;
 const REPO_ROOT = path.resolve(SRC_DIR, '..', '..'); // samskruti-archives/
+
+// ── Image output helpers ──────────────────────────────────────────────────────
+// Chrome screenshots are PNG, but the palm-leaf card is photographic (gradient +
+// grain), which PNG can't compress well (~2 MB). JPEG/WebP shrink it ~10x. We
+// convert with whatever tool is present (sips on macOS, ImageMagick/cwebp on
+// Linux); if none works we keep the PNG so a run never fails over format.
+function haveCmd(cmd) {
+  try { return spawnSync('sh', ['-c', `command -v ${cmd}`], { encoding: 'utf8' }).status === 0; }
+  catch (e) { return false; }
+}
+function convertImage(pngPath, outPath, format, quality) {
+  const q = String(quality || 90);
+  const fmt = format === 'jpg' ? 'jpeg' : format;
+  try {
+    if (fmt !== 'webp' && haveCmd('sips')) {
+      const r = spawnSync('sips', ['-s', 'format', fmt, '-s', 'formatOptions', q, pngPath, '--out', outPath], { encoding: 'utf8' });
+      if (r.status === 0 && fs.existsSync(outPath)) return true;
+    }
+    for (const tool of ['magick', 'convert', 'cwebp']) {
+      if (!haveCmd(tool)) continue;
+      const r = tool === 'cwebp'
+        ? spawnSync('cwebp', ['-quiet', '-q', q, pngPath, '-o', outPath], { encoding: 'utf8' })
+        : spawnSync(tool, [pngPath, '-quality', q, outPath], { encoding: 'utf8' });
+      if (r.status === 0 && fs.existsSync(outPath)) return true;
+    }
+  } catch (e) { /* fall through */ }
+  return false;
+}
+// Write today.<ext> into dir (converting from PNG if needed). Returns the ext used.
+function writeImage(dir, png, format, quality) {
+  fs.mkdirSync(dir, { recursive: true });
+  const pngPath = path.join(dir, 'today.png');
+  fs.writeFileSync(pngPath, png);
+  const fmt = String(format || 'png').toLowerCase();
+  if (fmt === 'png') return 'png';
+  const ext = fmt === 'jpeg' ? 'jpg' : fmt;
+  const outPath = path.join(dir, `today.${ext}`);
+  if (convertImage(pngPath, outPath, fmt, quality)) {
+    try { fs.unlinkSync(pngPath); } catch (e) { /* ignore */ }
+    return ext;
+  }
+  log(`warning: could not convert to ${fmt} (no tool?); keeping PNG`);
+  return 'png';
+}
 
 function parseArgs(argv) {
   const a = { flags: {} };
@@ -121,7 +166,7 @@ function processFeed(cfg, feed, args) {
   const payload = {
     size: cfg.size || 1080,
     script,
-    theme: card.theme,
+    theme: Object.assign({}, card.theme, args.grain != null ? { grain: Number(args.grain) } : {}),
     header,
     footer,
     logo,
@@ -132,24 +177,26 @@ function processFeed(cfg, feed, args) {
   log(`feed "${feed.id}": day ${dayIndex} → ${pickedId} (${chosen.file.replace(dataRoot + path.sep, '')})`);
   const png = renderToPng(payload, { chrome: args.chrome, size: payload.size });
 
-  // 5. Write today.* into the feed's output dir.
+  // 5. Write today.* into the feed's output dir (format from card config; CLI overrides).
+  const fmt = args.format || card.format || 'png';
+  const quality = args.quality || card.quality || 90;
   const outDir = path.resolve(outRoot, feed.output || `daily/${feed.id}/`);
-  fs.mkdirSync(outDir, { recursive: true });
-  fs.writeFileSync(path.join(outDir, 'today.png'), png);
+  const ext = writeImage(outDir, png, fmt, quality);
 
   const caption = config.fillTokens(feed.caption || '', Object.assign({ link: cfg.link || '' }, slots));
   fs.writeFileSync(path.join(outDir, 'today.txt'), caption + '\n');
 
-  const logLine = `${new Date().toISOString()} feed=${feed.id} date=${todayISO} index=${dayIndex} n=${order.length} id=${pickedId} file=${path.basename(chosen.file)}`;
+  const outFile = path.join(outDir, `today.${ext}`);
+  const bytes = fs.statSync(outFile).size;
+  const logLine = `${new Date().toISOString()} feed=${feed.id} date=${todayISO} index=${dayIndex} n=${order.length} id=${pickedId} file=${path.basename(chosen.file)} out=today.${ext} bytes=${bytes}`;
   fs.writeFileSync(path.join(outDir, 'today.log'), logLine + '\n');
-  log(`feed "${feed.id}": wrote ${path.join(outDir, 'today.png')} (${png.length} bytes)`);
+  log(`feed "${feed.id}": wrote ${outFile} (${(bytes / 1024 | 0)} KB)`);
 
   // 6. Archive a dated copy centrally.
   if (!args.flags.noArchive && feed.archivePath) {
     const archiveRoot = path.resolve(args['archive-root'] || REPO_ROOT);
     const archDir = path.join(archiveRoot, feed.archivePath, ymd(todayISO));
-    fs.mkdirSync(archDir, { recursive: true });
-    fs.writeFileSync(path.join(archDir, 'today.png'), png);
+    writeImage(archDir, png, fmt, quality);
     fs.writeFileSync(path.join(archDir, 'today.txt'), caption + '\n');
     log(`feed "${feed.id}": archived → ${archDir}`);
   }
@@ -175,8 +222,9 @@ function main() {
     }
   }
 
-  const only = args.feed;
-  const feeds = cfg.feeds.filter(f => !only || f.id === only);
+  // --feed accepts a single id or a comma-separated list (blank = all feeds).
+  const only = args.feed ? args.feed.split(',').map(s => s.trim()).filter(Boolean) : null;
+  const feeds = cfg.feeds.filter(f => !only || only.includes(f.id));
   if (!feeds.length) { console.error(`no feed matched --feed ${only}`); process.exit(2); }
 
   const results = [];

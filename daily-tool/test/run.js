@@ -45,9 +45,12 @@ const SCENARIOS = [
   { name: 'resilience',  config: 'config.resilience.json', feed: 'resilience', dataRoot: SAMSKRUTI },
 ];
 
-function isPng(buf) {
-  return buf && buf.length > 8 &&
-    buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47;
+function isImage(buf) {
+  if (!buf || buf.length < 12) return false;
+  if (buf[0] === 0x89 && buf[1] === 0x50) return true;                 // PNG
+  if (buf[0] === 0xff && buf[1] === 0xd8) return true;                 // JPEG
+  if (buf.toString('ascii', 0, 4) === 'RIFF' && buf.toString('ascii', 8, 12) === 'WEBP') return true; // WebP
+  return false;
 }
 
 function run(sc) {
@@ -73,15 +76,15 @@ function run(sc) {
       log: full, // full generator output, printed below the table on failure
     };
   }
-  // gen.js writes into <out-root>/<feed.output>; find the today.png it produced.
-  const png = findToday(outDir);
-  if (!png) return { name: sc.name, status: 'FAIL', note: 'no today.png produced' };
-  const buf = fs.readFileSync(png);
-  if (!isPng(buf) || buf.length < 10000) {
-    return { name: sc.name, status: 'FAIL', note: `bad PNG (${buf.length} bytes)` };
+  // gen.js writes into <out-root>/<feed.output>; find the today image it produced.
+  const img = findToday(outDir);
+  if (!img) return { name: sc.name, status: 'FAIL', note: 'no today image produced' };
+  const buf = fs.readFileSync(img);
+  if (!isImage(buf) || buf.length < 8000) {
+    return { name: sc.name, status: 'FAIL', note: `bad image (${buf.length} bytes)` };
   }
   const logLine = (res.stdout.match(/day \d+ → \S+/) || ['?'])[0];
-  return { name: sc.name, status: 'PASS', note: `${(buf.length / 1024 | 0)}KB · ${logLine}`, png };
+  return { name: sc.name, status: 'PASS', note: `${(buf.length / 1024 | 0)}KB · ${logLine}`, img };
 }
 
 function findToday(root) {
@@ -91,7 +94,7 @@ function findToday(root) {
     for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, e.name);
       if (e.isDirectory()) stack.push(full);
-      else if (e.name === 'today.png') return full;
+      else if (/^today\.(png|jpe?g|webp)$/.test(e.name)) return full;
     }
   }
   return null;
