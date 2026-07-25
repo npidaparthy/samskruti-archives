@@ -4,22 +4,35 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>రోజువారీ శ్లోకం · Daily Verse</title>
-<meta name="description" content="Verse of the day — a śloka, its meaning, and commentary.">
+<meta name="description" content="Verse of the day — a śloka, its meaning, and commentary. Browse past days.">
 <link rel="stylesheet" href="daily.css">
 </head>
 <body>
   <header class="top">
-    <a class="brand" href="/">సంస్కృతిః</a>
-    <span class="date" id="date"></span>
+    <div class="top-left">
+      <a class="back" href="/" aria-label="Back to site">←</a>
+      <a class="brand" href="/">సంస్కృతిః</a>
+    </div>
   </header>
 
   <nav class="tabs" id="tabs" aria-label="Feeds"></nav>
-  <div class="langs" id="langs" role="group" aria-label="Language"></div>
+
+  <div class="controls">
+    <div class="langs" id="langs" role="group" aria-label="Language"></div>
+    <div class="datebar">
+      <button class="nav-arrow" id="prev" type="button" aria-label="Previous day">‹</button>
+      <button class="date-pill" id="datePill" type="button" aria-haspopup="true" aria-expanded="false">
+        <span id="date"></span><span class="caret">▾</span>
+      </button>
+      <button class="nav-arrow" id="next" type="button" aria-label="Next day">›</button>
+    </div>
+  </div>
+  <div class="cal-popover" id="calPopover" hidden></div>
 
   <main class="stage">
     <figure class="card">
-      <img id="card-img" alt="Today's verse card" />
-      <figcaption class="empty" id="empty" hidden>Today's card isn't available yet.</figcaption>
+      <img id="card-img" alt="Verse card" />
+      <figcaption class="empty" id="empty" hidden>Card not available for this date.</figcaption>
     </figure>
 
     <div class="actions">

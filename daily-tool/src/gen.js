@@ -84,6 +84,7 @@ function parseArgs(argv) {
     const t = argv[i];
     if (t === '--force') a.flags.force = true;
     else if (t === '--no-archive') a.flags.noArchive = true;
+    else if (t === '--rebuild-manifest') a.flags.rebuildManifest = true;
     else if (t.startsWith('--')) { a[t.slice(2)] = argv[++i]; }
   }
   return a;
@@ -203,9 +204,37 @@ function processFeed(cfg, feed, args) {
   const langs = produced.map(p => p.id).filter(Boolean).join(',') || 'default';
   const logLine = `${new Date().toISOString()} feed=${feed.id} date=${todayISO} index=${dayIndex} n=${order.length} id=${pickedId} file=${path.basename(chosen.file)} variants=${langs}`;
   fs.writeFileSync(path.join(outDir, 'today.log'), logLine + '\n');
-  if (doArchive) fs.writeFileSync(path.join(archDir, 'today.log'), logLine + '\n');
+  if (doArchive) {
+    fs.writeFileSync(path.join(archDir, 'today.log'), logLine + '\n');
+    updateManifest(archiveRoot, cfg, feed, ymd(todayISO), fmt === 'jpeg' ? 'jpg' : fmt);
+  }
 
   return { feed: feed.id, id: pickedId, outDir, variants: produced };
+}
+
+// Maintain one manifest per site (<archiveRoot>/<site>/manifest.json) listing,
+// per feed, the dates that have an archived card — so the archive browser can
+// enumerate history without hitting the GitHub API (no rate limit).
+function updateManifest(archiveRoot, cfg, feed, date, format) {
+  const dir = path.join(archiveRoot, cfg.site);
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, 'manifest.json');
+  let m = {};
+  if (fs.existsSync(file)) { try { m = JSON.parse(fs.readFileSync(file, 'utf8')); } catch (e) { m = {}; } }
+  m.repo = (cfg.archive && cfg.archive.repo) || m.repo || '';
+  m.ref = m.ref || 'main';
+  m.site = cfg.site;
+  m.feeds = m.feeds || {};
+  const entry = m.feeds[feed.id] || { dates: [] };
+  entry.label = feed.label || feed.id;
+  entry.path = feed.archivePath;
+  entry.format = format;
+  entry.langs = (feed.variants || []).map(v => v.id).filter(Boolean);
+  const dates = new Set(entry.dates || []); dates.add(date);
+  entry.dates = Array.from(dates).sort();
+  m.feeds[feed.id] = entry;
+  m.updated = new Date().toISOString();
+  fs.writeFileSync(file, JSON.stringify(m, null, 2) + '\n');
 }
 
 // Logo payload: default ॐ mark unless card.logo:false; a configured file path
@@ -223,12 +252,30 @@ function buildLogo(card, dataRoot, feed) {
   return logo;
 }
 
+// Rebuild the archive manifest from the dated dirs already on disk (backfill),
+// without rendering. Usage: gen.js --config <c> --rebuild-manifest [--archive-root <d>]
+function rebuildManifest(cfg, args) {
+  const archiveRoot = path.resolve(args['archive-root'] || REPO_ROOT);
+  for (const feed of cfg.feeds) {
+    if (!feed.archivePath) continue;
+    const base = path.join(archiveRoot, feed.archivePath);
+    let dates = [];
+    try { dates = fs.readdirSync(base).filter(d => /^\d{8}$/.test(d)); } catch (e) { /* none */ }
+    const card = config.feedCard(cfg, feed);
+    const fmt = card.format ? (card.format === 'jpeg' ? 'jpg' : card.format) : 'png';
+    dates.sort().forEach(d => updateManifest(archiveRoot, cfg, feed, d, fmt));
+    log(`manifest: ${feed.id} → ${dates.length} date(s)`);
+  }
+}
+
 function main() {
   const args = parseArgs(process.argv);
   if (!args.config) { console.error('missing --config <path>'); process.exit(2); }
-  if (!args['data-root']) { console.error('missing --data-root <site checkout>'); process.exit(2); }
 
   const cfg = config.load(path.resolve(args.config));
+
+  if (args.flags.rebuildManifest) { rebuildManifest(cfg, args); return; }
+  if (!args['data-root']) { console.error('missing --data-root <site checkout>'); process.exit(2); }
 
   // Timezone hour gate (§8): only proceed at config.timezone.hour, unless forced.
   if (!args.flags.force) {
