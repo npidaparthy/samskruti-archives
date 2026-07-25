@@ -160,14 +160,17 @@
     head.appendChild(prev); head.appendChild(title); head.appendChild(next); cal.appendChild(head);
 
     const grid = document.createElement('div'); grid.className = 'cal-grid';
-    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach((d) => { const e = document.createElement('div'); e.className = 'cal-dow'; e.textContent = d; grid.appendChild(e); });
+    ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach((d) => { const e = document.createElement('div'); e.className = 'cal-dow'; e.textContent = d; grid.appendChild(e); });
+    const todayKey = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     const first = new Date(Date.UTC(y, m, 1)).getUTCDay();
     const days = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
     for (let i = 0; i < first; i++) { const e = document.createElement('div'); e.className = 'cal-day blank'; grid.appendChild(e); }
     for (let d = 1; d <= days; d++) {
       const key = `${y}${String(m + 1).padStart(2, '0')}${String(d).padStart(2, '0')}`;
-      const cell = document.createElement('div'); cell.className = 'cal-day'; cell.textContent = d;
-      if (set.has(key)) { cell.classList.add('has'); cell.addEventListener('click', () => openLightbox(key)); }
+      const cell = document.createElement('div'); cell.className = 'cal-day';
+      const num = document.createElement('span'); num.className = 'cal-num'; num.textContent = d; cell.appendChild(num);
+      if (key === todayKey) cell.classList.add('today');
+      if (set.has(key)) { cell.classList.add('has'); cell.title = fmtDate(key); cell.addEventListener('click', () => openLightbox(key)); }
       grid.appendChild(cell);
     }
     cal.appendChild(grid);
