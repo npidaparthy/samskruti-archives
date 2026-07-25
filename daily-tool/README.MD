@@ -307,13 +307,32 @@ and the `samskruti/` + `smruti/` output folders (done).
 
 ---
 
-## 11. Telegram (next iteration — extension point, not yet built)
+## 11. Telegram publishing
 
-`gen.js`'s per-feed loop ends with a `publish` step. Today it writes files only. Next
-iteration: if `feed.telegram.enabled`, read `TELEGRAM_TOKEN` (secret) + `feed.telegram.chatIds`
-(config) and POST `today.png` + caption to each chat via the Telegram Bot API — official,
-free, posts to groups/channels. Because feeds are independent, the Yoga Sūtras feed posts
-to the yoga group and subhāṣitam to its group automatically. No Part-1 rework.
+After writing files, `gen.js` publishes each feed's card to that feed's own Telegram chats
+via the free Bot API (`sendPhoto`, multipart upload via `curl`). It's a no-op unless the
+feed opts in and a bot token is present, so it never affects other feeds/runs. Because
+feeds are independent, the Yoga Sūtras feed posts to the yoga group and subhāṣitam to its
+group automatically.
+
+```jsonc
+"telegram": {
+  "enabled": true,
+  "chatIds": ["-1001234567890", "@my_public_channel"],  // groups: numeric; channels: @name or -100…
+  "lang": "te",                 // optional: which variant to post (default: first variant)
+  "tokenSecret": "TELEGRAM_TOKEN" // env var holding the bot token (default TELEGRAM_TOKEN)
+}
+```
+
+- **Token**: the caller workflow already forwards `TELEGRAM_TOKEN` (a repo secret) to the
+  reusable workflow's `gen.js` step. Get a token from **@BotFather** (`/newbot`).
+- **Chat ids**: add the bot to the group (as member) or **channel (as admin)**, then read
+  the id from `https://api.telegram.org/bot<TOKEN>/getUpdates` (or a helper like
+  @getidsbot). Groups/supergroups are negative (`-100…`); public channels can use `@name`.
+- **Caption** is capped at Telegram's 1024 chars (the image carries the full text anyway).
+- **Cost**: the Bot API is **free** — no keys to buy, no per-message charge. Rate limits
+  (~30 msgs/sec overall; ~20/min to one group) are far above a once-a-day post.
+- `--no-telegram` skips publishing (for local/manual test runs).
 
 ---
 
