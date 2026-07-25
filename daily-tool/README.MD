@@ -413,4 +413,22 @@ The viewing page reads `variants` and shows a language toggle when ≥ 2 languag
 across the feeds; the chosen language is remembered (localStorage) and swaps the card
 image + caption. A feed without a variant for the chosen language falls back to its
 default card. Feeds with no `variants` render a single card as before.
+
+---
+
+## 17. Archive browser (past cards)
+
+Each run appends the date to a per-site manifest at `<archiveRoot>/<site>/manifest.json`
+(feed → { label, path, format, langs, dates }). A static browser at `site-assets/archive/`
+(installed to `daily/archive/`) reads that one manifest — **no GitHub API, so no rate
+limit** — and loads cards from the public archive repo (via `config.archive.repo`, CORS
+works). It offers **Grid ⇄ Calendar** views, the language toggle, and a lightbox with
+caption + share/download + prev/next. Old dates from before a format/variant change still
+load (it falls back `today.<lang>.<ext>` → `today.<ext>` → `today.png`).
+
+Backfill the manifest from existing dated dirs:
+```bash
+node src/gen.js --config <site>/daily/config.json --rebuild-manifest [--archive-root <dir>]
+```
+`?raw=<base/>` on the archive page overrides the fetch origin (self-hosting / local dev).
 ```

@@ -1,0 +1,57 @@
+{
+  "repo": "npidaparthy/samskruti-archives",
+  "ref": "main",
+  "site": "samskruti",
+  "feeds": {
+    "subhashitam": {
+      "dates": [
+        "20260724",
+        "20260725"
+      ],
+      "label": "సుభాషితం",
+      "path": "samskruti/subhashitam",
+      "format": "jpg",
+      "langs": [
+        "te",
+        "en"
+      ]
+    },
+    "dindima": {
+      "dates": [
+        "20260724",
+        "20260725"
+      ],
+      "label": "వేదాంత డిండిమం",
+      "path": "samskruti/dindima",
+      "format": "jpg",
+      "langs": [
+        "te",
+        "en"
+      ]
+    },
+    "yogasutra": {
+      "dates": [
+        "20260724",
+        "20260725"
+      ],
+      "label": "యోగసూత్రాలు",
+      "path": "samskruti/yogasutra",
+      "format": "jpg",
+      "langs": [
+        "te",
+        "en"
+      ]
+    },
+    "stotram": {
+      "dates": [
+        "20260724",
+        "20260725"
+      ],
+      "label": "స్తోత్రం",
+      "path": "samskruti/stotram",
+      "format": "jpg",
+      "langs": []
+    }
+  },
+  "updated": "2026-07-24T23:51:22.460Z"
+}

@@ -1,0 +1,21 @@
+{
+  "repo": "npidaparthy/samskruti-archives",
+  "ref": "main",
+  "site": "smruti",
+  "feeds": {
+    "bg": {
+      "dates": [
+        "20260724",
+        "20260725"
+      ],
+      "label": "భగవద్గీత",
+      "path": "smruti/bg",
+      "format": "jpg",
+      "langs": [
+        "te",
+        "en"
+      ]
+    }
+  },
+  "updated": "2026-07-24T23:51:22.544Z"
+}

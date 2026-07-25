@@ -20,6 +20,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }   /* beat display rules on .lightbox/.grid/etc. */
 html, body { background: var(--bg); color: var(--ink); }
 body {
   font-family: var(--fs-body);
@@ -35,6 +36,12 @@ body {
   width: 100%; max-width: 620px;
   display: flex; align-items: baseline; justify-content: space-between;
 }
+.top-left { display: flex; align-items: baseline; gap: .5rem; }
+.back {
+  font-size: 1.4rem; line-height: 1; color: var(--accent-2);
+  text-decoration: none; padding: .1rem .4rem; border-radius: 8px;
+}
+.back:hover { color: var(--ink); background: var(--line); }
 .brand { font-size: 1.35rem; font-weight: 700; color: var(--accent-2); text-decoration: none; letter-spacing: .02em; }
 .date { font-size: .8rem; color: var(--muted); letter-spacing: .04em; }
 
@@ -100,7 +107,7 @@ body {
 }
 .caption:empty { display: none; }
 
-.foot { margin-top: auto; padding-top: .5rem; font-size: .8rem; }
+.foot { margin-top: auto; padding-top: .5rem; font-size: .8rem; display: flex; gap: .5rem; color: var(--muted); }
 .foot a { color: var(--muted); text-decoration: none; }
 .foot a:hover { color: var(--accent); }
 

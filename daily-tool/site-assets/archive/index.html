@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="te">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ఆర్కైవ్ · Daily Archive</title>
+<link rel="stylesheet" href="../daily.css">
+<link rel="stylesheet" href="archive.css">
+</head>
+<body>
+  <header class="top">
+    <a class="back" href="../" aria-label="Back to daily">←</a>
+    <a class="brand" href="/">సంస్కృతిః</a>
+    <span class="arch-title">ఆర్కైవ్ · Archive</span>
+  </header>
+
+  <div class="arch-controls">
+    <nav class="tabs" id="tabs" aria-label="Feeds"></nav>
+    <div class="row2">
+      <div class="langs" id="langs" role="group" aria-label="Language"></div>
+      <div class="views" id="views" role="group" aria-label="View">
+        <button class="view-btn" data-view="grid" type="button">☷ Grid</button>
+        <button class="view-btn" data-view="calendar" type="button">▦ Calendar</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="stage">
+    <div id="grid" class="grid"></div>
+    <div id="calendar" class="calendar" hidden></div>
+    <button id="more" class="btn ghost" type="button" hidden>Load more</button>
+    <p id="empty" class="empty" hidden>No archived cards yet.</p>
+  </main>
+
+  <div id="lightbox" class="lightbox" hidden>
+    <button class="lb-close" id="lbClose" type="button" aria-label="Close">✕</button>
+    <button class="lb-nav lb-prev" id="lbPrev" type="button" aria-label="Previous day">‹</button>
+    <button class="lb-nav lb-next" id="lbNext" type="button" aria-label="Next day">›</button>
+    <div class="lb-inner">
+      <div class="lb-date" id="lbDate"></div>
+      <img id="lbImg" alt="">
+      <div class="actions">
+        <button id="lbShare" class="btn" type="button">Share</button>
+        <a id="lbDownload" class="btn ghost" download>Download</a>
+      </div>
+      <section class="caption" id="lbCaption"></section>
+    </div>
+  </div>
+
+  <footer class="foot"><a id="site-link" href="/">samskruti.info</a></footer>
+  <script src="archive.js"></script>
+</body>
+</html>
