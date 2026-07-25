@@ -416,15 +416,18 @@ default card. Feeds with no `variants` render a single card as before.
 
 ---
 
-## 17. Archive browser (past cards)
+## 17. Browsing past cards (one page, date navigation)
+
+The daily page **is** the archive: it's a date-viewer defaulting to today, with
+**prev / next** and a **calendar popover** (opened from the date pill) to jump to any past
+day. No separate archive page.
 
 Each run appends the date to a per-site manifest at `<archiveRoot>/<site>/manifest.json`
-(feed → { label, path, format, langs, dates }). A static browser at `site-assets/archive/`
-(installed to `daily/archive/`) reads that one manifest — **no GitHub API, so no rate
-limit** — and loads cards from the public archive repo (via `config.archive.repo`, CORS
-works). It offers **Grid ⇄ Calendar** views, the language toggle, and a lightbox with
-caption + share/download + prev/next. Old dates from before a format/variant change still
-load (it falls back `today.<lang>.<ext>` → `today.<ext>` → `today.png`).
+(feed → { label, path, format, langs, dates }). The page reads that one manifest — **no
+GitHub API, so no rate limit** — to know which dates exist. **Today** loads from the site's
+own `today.*`; **past days** load from the public archive repo (via `config.archive.repo`,
+CORS works). Old dates from before a format/variant change still load (fallback chain
+`today.<lang>.<ext>` → `today.<ext>` → `today.png`). Deep-linkable via `#<feed>/<date>`.
 
 Backfill the manifest from existing dated dirs:
 ```bash
