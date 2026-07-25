@@ -84,6 +84,7 @@ function parseArgs(argv) {
     const t = argv[i];
     if (t === '--force') a.flags.force = true;
     else if (t === '--no-archive') a.flags.noArchive = true;
+    else if (t === '--no-telegram') a.flags.noTelegram = true;
     else if (t === '--rebuild-manifest') a.flags.rebuildManifest = true;
     else if (t.startsWith('--')) { a[t.slice(2)] = argv[++i]; }
   }
@@ -198,7 +199,7 @@ function processFeed(cfg, feed, args) {
     const primary = v.id ? `today.${v.id}` : 'today';
     const bytes = fs.statSync(path.join(outDir, `${primary}.${ext}`)).size;
     log(`feed "${feed.id}"${v.id ? ` [${v.id}]` : ''}: wrote ${primary}.${ext} (${(bytes / 1024 | 0)} KB)`);
-    produced.push({ id: v.id, ext });
+    produced.push({ id: v.id, ext, caption, file: path.join(outDir, `${primary}.${ext}`) });
   });
 
   const langs = produced.map(p => p.id).filter(Boolean).join(',') || 'default';
@@ -209,7 +210,41 @@ function processFeed(cfg, feed, args) {
     updateManifest(archiveRoot, cfg, feed, ymd(todayISO), fmt === 'jpeg' ? 'jpg' : fmt);
   }
 
+  // 7. Publish to Telegram (per feed → its own chats). Skipped unless the feed
+  //    opts in and a bot token is present, so other runs are unaffected (§11).
+  publishTelegram(feed, produced, args);
+
   return { feed: feed.id, id: pickedId, outDir, variants: produced };
+}
+
+// POST the day's card + caption to each of a feed's Telegram chats via the free
+// Bot API (sendPhoto, multipart via curl). No-op unless feed.telegram.enabled
+// and the token env var is set. Picks the telegram.lang variant (else default).
+function publishTelegram(feed, produced, args) {
+  const tg = feed.telegram;
+  if (args.flags.noTelegram || !tg || !tg.enabled) return;
+  const token = process.env[tg.tokenSecret || 'TELEGRAM_TOKEN'];
+  const chatIds = tg.chatIds || [];
+  if (!token) { log(`feed "${feed.id}": telegram on but no token in $${tg.tokenSecret || 'TELEGRAM_TOKEN'} — skipping`); return; }
+  if (!chatIds.length) { log(`feed "${feed.id}": telegram on but no chatIds — skipping`); return; }
+  if (!haveCmd('curl')) { log(`feed "${feed.id}": curl not found — cannot post to telegram`); return; }
+
+  const chosen = (tg.lang && produced.find(p => p.id === tg.lang)) || produced.find(p => p.id) || produced[0];
+  if (!chosen) return;
+  const caption = String(chosen.caption || '').slice(0, 1024); // Telegram caption cap
+
+  for (const chatId of chatIds) {
+    const r = spawnSync('curl', [
+      '-s', '-o', '/dev/null', '-w', '%{http_code}',
+      '-F', `chat_id=${chatId}`,
+      '-F', `photo=@${chosen.file}`,
+      '-F', `caption=${caption}`,
+      `https://api.telegram.org/bot${token}/sendPhoto`,
+    ], { encoding: 'utf8', timeout: 45000 });
+    const code = (r.stdout || '').trim();
+    if (code === '200') log(`feed "${feed.id}": telegram → ${chatId} ✓`);
+    else log(`feed "${feed.id}": telegram → ${chatId} FAILED (http ${code || (r.error && r.error.message)})`);
+  }
 }
 
 // Maintain one manifest per site (<archiveRoot>/<site>/manifest.json) listing,
