@@ -47,6 +47,11 @@ on:
         required: false
         type: string
         default: "main"
+      no_telegram:
+        description: "Skip Telegram publishing (useful for manual testing)."
+        required: false
+        type: boolean
+        default: false
     secrets:
       ARCHIVE_TOKEN:
         description: "Fine-grained PAT with contents:write on samskruti-archives."
@@ -123,6 +128,7 @@ jobs:
           fi
           [ -n "$FEEDS" ]  && ARGS="$ARGS --feed $FEEDS"
           [ -n "$SCRIPT" ] && ARGS="$ARGS --script $SCRIPT"
+          [ "${{ inputs.no_telegram }}" = "true" ] && ARGS="$ARGS --no-telegram"
           node central/daily-tool/src/gen.js \
             --config "site/${{ inputs.config }}" \
             --data-root site \

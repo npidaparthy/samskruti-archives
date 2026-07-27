@@ -42,7 +42,11 @@
       ctx.font = `500 ${size}px ${env.fonts.verse}`;
       ctx.fillStyle = env.colors.verse; ctx.textAlign = 'center';
       let by = y + size;
-      for (const line of lines) { ctx.fillText(line, env.S / 2, by); by += size * lhMult; }
+      lines.forEach((line, i) => {
+        const suffix = (i === 1) ? ' ।' : (i === lines.length - 1) ? ' ॥' : '';
+        ctx.fillText(line + suffix, env.S / 2, by);
+        by += size * lhMult;
+      });
       return by - size * lhMult + size * 0.3;
     },
   });
