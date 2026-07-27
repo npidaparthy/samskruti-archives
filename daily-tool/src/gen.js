@@ -236,9 +236,9 @@ function publishTelegram(feed, produced, args) {
   for (const chatId of chatIds) {
     const r = spawnSync('curl', [
       '-s', '-o', '/dev/null', '-w', '%{http_code}',
-      '-F', `chat_id=${chatId}`,
+      '--form-string', `chat_id=${chatId}`,
       '-F', `photo=@${chosen.file}`,
-      '-F', `caption=${caption}`,
+      '--form-string', `caption=${caption}`,
       `https://api.telegram.org/bot${token}/sendPhoto`,
     ], { encoding: 'utf8', timeout: 45000 });
     const code = (r.stdout || '').trim();
