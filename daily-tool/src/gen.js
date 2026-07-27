@@ -85,6 +85,7 @@ function parseArgs(argv) {
     if (t === '--force') a.flags.force = true;
     else if (t === '--no-archive') a.flags.noArchive = true;
     else if (t === '--no-telegram') a.flags.noTelegram = true;
+    else if (t === '--test-telegram') a.flags.testTelegram = true;
     else if (t === '--rebuild-manifest') a.flags.rebuildManifest = true;
     else if (t.startsWith('--')) { a[t.slice(2)] = argv[++i]; }
   }
@@ -224,7 +225,7 @@ function publishTelegram(feed, produced, args) {
   const tg = feed.telegram;
   if (args.flags.noTelegram || !tg || !tg.enabled) return;
   const token = process.env[tg.tokenSecret || 'TELEGRAM_TOKEN'];
-  const chatIds = tg.chatIds || [];
+  const chatIds = args.flags.testTelegram ? (tg.testChatIds || []) : (tg.chatIds || []);
   if (!token) { log(`feed "${feed.id}": telegram on but no token in $${tg.tokenSecret || 'TELEGRAM_TOKEN'} — skipping`); return; }
   if (!chatIds.length) { log(`feed "${feed.id}": telegram on but no chatIds — skipping`); return; }
   if (!haveCmd('curl')) { log(`feed "${feed.id}": curl not found — cannot post to telegram`); return; }
