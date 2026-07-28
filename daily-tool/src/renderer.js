@@ -123,7 +123,7 @@
   const FONTS = {
     verse: '"Noto Sans Telugu","Noto Serif Devanagari","Kohinoor Telugu","Telugu Sangam MN","Kohinoor Devanagari","Devanagari Sangam MN","Georgia",serif',
     body: '"Noto Sans Telugu","Kohinoor Telugu","Telugu Sangam MN","Noto Serif Devanagari","Kohinoor Devanagari","Georgia",serif',
-    src: '"Georgia",serif',
+    src: '"Noto Sans Telugu","Noto Serif Devanagari","Kohinoor Telugu","Telugu Sangam MN","Kohinoor Devanagari","Devanagari Sangam MN","Georgia",serif',
   };
 
   // ── Palm-leaf template — draws the card chrome and returns layout geometry ────
