@@ -61,27 +61,37 @@
     },
 
     // Word-wrap with NO truncation. y = first baseline. Returns bottom Y.
+    // Hard newlines (\n) in text are preserved as forced line breaks.
     wrap(ctx, text, x, y, maxW, lineH) {
-      const words = String(text).split(/\s+/);
-      let line = '', cy = y;
-      for (const word of words) {
-        const test = line + word + ' ';
-        if (ctx.measureText(test).width > maxW && line) {
-          ctx.fillText(line.trim(), x, cy); line = word + ' '; cy += lineH;
-        } else { line = test; }
+      let cy = y;
+      for (const para of String(text).split('\n')) {
+        const words = para.split(/\s+/).filter(Boolean);
+        if (!words.length) { cy += lineH; continue; }
+        let line = '';
+        for (const word of words) {
+          const test = line + word + ' ';
+          if (ctx.measureText(test).width > maxW && line) {
+            ctx.fillText(line.trim(), x, cy); line = word + ' '; cy += lineH;
+          } else { line = test; }
+        }
+        if (line.trim()) { ctx.fillText(line.trim(), x, cy); cy += lineH; }
       }
-      if (line.trim()) ctx.fillText(line.trim(), x, cy);
-      return cy + lineH;
+      return cy;
     },
 
     // Measure wrapped height without drawing.
     measureWrap(ctx, text, maxW, lineH) {
-      const words = String(text).split(/\s+/);
-      let line = '', lines = 1;
-      for (const word of words) {
-        const test = line + word + ' ';
-        if (ctx.measureText(test).width > maxW && line) { line = word + ' '; lines++; }
-        else { line = test; }
+      let lines = 0;
+      for (const para of String(text).split('\n')) {
+        const words = para.split(/\s+/).filter(Boolean);
+        if (!words.length) { lines++; continue; }
+        let line = '', paraLines = 1;
+        for (const word of words) {
+          const test = line + word + ' ';
+          if (ctx.measureText(test).width > maxW && line) { line = word + ' '; paraLines++; }
+          else { line = test; }
+        }
+        lines += paraLines;
       }
       return lines * lineH;
     },
@@ -200,7 +210,7 @@
       contentW: S - CONT * 2,
       colors,
       fonts: FONTS,
-      gaps: { section: 44, head: 42, firstAfterHeader: 28 },
+      gaps: { section: 44, head: 42, firstAfterHeader: 10 },
       bandTop: OUTER + 56,          // top rule of the source band
       footerRule: S - INNER - 58,   // horizontal rule above the footer
       footerBaseline: S - INNER - 18,
