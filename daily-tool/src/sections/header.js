@@ -14,7 +14,7 @@
       const metre = String((value && value.metre) || '').trim().toUpperCase();
 
       // Grantha name is the primary line; the metre is a smaller subtitle.
-      const SRC_SIZE = 21, SRC_LH = SRC_SIZE * 1.5;
+      const SRC_SIZE = 26, SRC_LH = SRC_SIZE * 1.5;
       const MTR_SIZE = 15, MTR_LH = MTR_SIZE * 1.5;
 
       // Wrap the heading to at most two lines.

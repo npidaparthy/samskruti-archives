@@ -37,8 +37,8 @@
     const isFour = lines.length >= 4;
 
     const startSize = isFour
-      ? (syl <= 11 ? (isIAST ? 36 : 40) : syl <= 15 ? (isIAST ? 32 : 36) : (isIAST ? 28 : 32))
-      : (syl <= 8 ? (isIAST ? 38 : 42) : (isIAST ? 34 : 38));
+      ? (syl <= 11 ? (isIAST ? 32 : 36) : syl <= 15 ? (isIAST ? 28 : 32) : (isIAST ? 24 : 28))
+      : (syl <= 8 ? (isIAST ? 34 : 36) : (isIAST ? 30 : 34));
     const lhMult = isFour ? 1.65 : 1.9;
 
     let size = startSize;
