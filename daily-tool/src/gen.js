@@ -152,7 +152,7 @@ function processFeed(cfg, feed, args) {
 
     const sections = feed.sections.map(type => {
       const item = { type, value: slots[type] };
-      if (type === 'verse') item.meta = { script, syllables: feed.syllables || config.parseSyllables(slots.chanda || slots.metre) };
+      if (type === 'verse') item.opts = { meta: { script, syllables: feed.syllables || config.parseSyllables(slots.chanda || slots.metre) } };
       return item;
     });
 
