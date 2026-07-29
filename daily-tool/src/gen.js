@@ -236,15 +236,21 @@ function publishTelegram(feed, produced, args) {
 
   for (const chatId of chatIds) {
     const r = spawnSync('curl', [
-      '-s', '-o', '/dev/null', '-w', '%{http_code}',
+      '-s', '-w', '\n%{http_code}',
       '--form-string', `chat_id=${chatId}`,
       '-F', `photo=@${chosen.file}`,
       '--form-string', `caption=${caption}`,
       `https://api.telegram.org/bot${token}/sendPhoto`,
     ], { encoding: 'utf8', timeout: 45000 });
-    const code = (r.stdout || '').trim();
+    const parts = (r.stdout || '').trim().split('\n');
+    const code = parts.pop().trim();
+    const body = parts.join('\n').trim();
     if (code === '200') log(`feed "${feed.id}": telegram → ${chatId} ✓`);
-    else log(`feed "${feed.id}": telegram → ${chatId} FAILED (http ${code || (r.error && r.error.message)})`);
+    else {
+      let detail = '';
+      try { detail = JSON.parse(body).description || body; } catch { detail = body; }
+      log(`feed "${feed.id}": telegram → ${chatId} FAILED (http ${code}): ${detail}`);
+    }
   }
 }
 
