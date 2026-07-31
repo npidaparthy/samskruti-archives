@@ -138,6 +138,22 @@ function processFeed(cfg, feed, args) {
   const archDir = path.join(archiveRoot, feed.archivePath || `misc/${feed.id}`, ymd(todayISO));
   const doArchive = !args.flags.noArchive && feed.archivePath;
 
+  // Idempotency (§8b): today.log records the date it was last generated for.
+  // Scheduled runs can legitimately fire more than once a day (staggered
+  // backup crons covering for GitHub Actions' scheduling delay) — if this
+  // feed's card was already generated for today, skip it rather than
+  // re-rendering and double-posting to Telegram. --force bypasses this,
+  // same as the hour gate, so manual/local runs always regenerate.
+  if (!args.flags.force) {
+    try {
+      const prevLog = fs.readFileSync(path.join(outDir, 'today.log'), 'utf8');
+      if (prevLog.includes(`date=${todayISO}`)) {
+        log(`feed "${feed.id}": already generated for ${todayISO} — skipping.`);
+        return null;
+      }
+    } catch (e) { /* no prior today.log — first run of the day */ }
+  }
+
   const hasVariants = Array.isArray(feed.variants) && feed.variants.length > 0;
   const variants = hasVariants ? feed.variants : [{ id: null }];
   const logo = buildLogo(card, dataRoot, feed);
@@ -319,13 +335,20 @@ function main() {
   if (args.flags.rebuildManifest) { rebuildManifest(cfg, args); return; }
   if (!args['data-root']) { console.error('missing --data-root <site checkout>'); process.exit(2); }
 
-  // Timezone hour gate (§8): only proceed at config.timezone.hour, unless forced.
+  // Timezone hour gate (§8): only proceed at or after config.timezone.hour,
+  // unless forced. This used to require an exact hour match, but GitHub
+  // Actions scheduled runs can be delayed by hours under load (and are
+  // silently dropped rather than queued if delayed too long), so an exact
+  // match caused legitimate runs to skip entirely on a busy day. ">=" lets a
+  // late run still succeed; the per-feed idempotency check above (§8b) is
+  // what actually prevents duplicates now, so staggered backup crons are
+  // safe to add per-site without risking a double-post.
   if (!args.flags.force) {
     const hour = rotation.hourInZone(cfg.timezone.name);
     if (hour == null) {
       log(`warning: cannot compute ${cfg.timezone.name} hour (ICU?); proceeding. Use --force to silence.`);
-    } else if (hour !== cfg.timezone.hour) {
-      log(`hour gate: ${cfg.timezone.name} is ${hour}:00, want ${cfg.timezone.hour}:00 — skipping.`);
+    } else if (hour < cfg.timezone.hour) {
+      log(`hour gate: ${cfg.timezone.name} is ${hour}:00, want ${cfg.timezone.hour}:00 or later — skipping.`);
       return;
     }
   }
